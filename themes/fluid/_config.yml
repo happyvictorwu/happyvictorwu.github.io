@@ -102,7 +102,7 @@ banner_parallax: true  # 头图滚动视差
 #---------------------------
 footer:
   statistics:  # 统计网站 PV、UV，使用的是不蒜子，显示在页脚
-    enable: true
+    enable: false
     pv_format: "总访问量 {} 次"  # 显示的文本，{}是数字的占位符（必须包含)，下同
     uv_format: "总访客数 {} 人"
 
@@ -126,7 +126,7 @@ index:
   banner_img_height: 100  # 头图高度，屏幕百分比，available: 0 - 100
   slogan:  # 首页副标题的独立设置
     enable: true  # 为 false 则不显示任何内容
-    text:  解决问题 & 高效生活 # 为空则按 hexo config.subtitle 显示
+    text:  Stay hungry, stay foolish. # 为空则按 hexo config.subtitle 显示
   auto_excerpt:
     enable: true
   post_url_target: _self  # available: _blank | _self
@@ -165,8 +165,8 @@ post:
     enable: false
     content: '<img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">' # 自定义区域，支持 HTML，可自行插入赞赏码、公众号二维码等内容
   comments:  # 评论
-    enable: false  # 开启评论
-    type: disqus  # 指定使用的评论模块  available: disqus | valine | gitalk | utterances | changyan | livere
+    enable: true  # 开启评论
+    type: gitalk  # 指定使用的评论模块  available: disqus | valine | gitalk | utterances | changyan | livere
   image_zoom:  # 文章图片可点击放大
     enable: true
   math:  # 数学公式，开启之前需要更换 Markdown 渲染器，否则复杂公式会有兼容问题，具体请见 https://fluid-dev.github.io/hexo-fluid-docs/guide/#数学公式
