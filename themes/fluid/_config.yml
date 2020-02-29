@@ -36,8 +36,8 @@ fun_features: # 一些好玩的功能
     visible: false # 默认悬浮显示，可选：always（一会显示） | touch（移动端触摸显示）
     icon: "" # 可选：§ | # | ❡ 等，留空则为默认效果
   mouse_click:  # 鼠标点击动效
-    enable: false
-    style: values # 目前设置两个值：values（价值观词汇） | love（爱心）
+    enable: true
+    style: love # 目前设置两个值：values（价值观词汇） | love（爱心）
 
 color:  # 主体颜色配置，可以从这里寻找启发： https://www.webdesignrankings.com/resources/lolcolors/
   body_bg_color: "#eee"
@@ -291,13 +291,15 @@ about:  # 以下仅为页面顶部的基本信息，更多内容请在 ./pages/a
   md_path: ./pages/about.md  # 关于页文档的相对路径，可以按相对文档设置主题之外的路径，从而避免更新冲突
   banner_img: /img/default.png
   banner_img_height: 80  # available: 0 - 100
-  avatar: /img/avatar.png # 头像
-  name: myname
-  introduce: info / info / info # 支持 HTML
+  avatar: /img/avatar.jpg # 头像
+  name: Victor
+  introduce: 一个学生 / 爱打代码 / 爱打网球🎾 # 支持 HTML
   icons: # 更多图标可从 https://fontawesome.com/v5.10.0/icons?d=gallery 查找，并以 "图标名: url" 的格式添加在下方
-    "fab fa-github": https://github.com
-    "fab fa-twitter": https://twitter.com
-    "fab fa-weixin":  # 微信图标，这个是特殊图标，点击不会跳转而是悬浮二维码，所以链接需要对应二维码图片地址
+    "fas fa-mail-bulk": mailto://happyvictorwu@outlook.com
+    "fab fa-linkedin": https://www.linkedin.com/in/wuyuxuan/?locale=en_US
+    "fab fa-github": https://github.com/happy-yuxuan
+    "fab fa-zhihu": https://www.zhihu.com/people/lai-zi-cheng-xu-yuan-shen-shen-de-e-yi
+    "fab fa-weixin": # 微信图标，这个是特殊图标，点击不会跳转而是悬浮二维码，所以链接需要对应二维码图片地址
 
 
 #---------------------------
