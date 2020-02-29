@@ -1,6 +1,7 @@
 ---
 title: Java快速读写模板
 date: 2020-02-19 22:01:11
+categories:
 - [Java, 集合类]
 - [算法, 技巧]
 tags:
