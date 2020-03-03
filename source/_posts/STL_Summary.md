@@ -255,3 +255,13 @@ vector<pair<int, int>> a2(mp.begin(), mp.end());  // map -> vector
 
 unordered_set<char> se(word.begin(), word.end()); //word 为 string
 ```
+
+## 容器元素为pair的时候不要使用引用
+
+```c++
+deque<pair<int, int>> q;
+
+// auto& t = q.front();   // 不要添加引用, 会出现意想不到的错误
+auto t = q.front();
+```
+
