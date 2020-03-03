@@ -13,7 +13,7 @@
 #---------------------------
 favicon: /img/favicon.png # 网站标签页的 icon
 
-apple_touch_icon: /img/apple-touch-icon.png # 用于苹果设备的 icon
+apple_touch_icon: /img/favicon.png # 用于苹果设备的 icon
 
 title_join_string: ' ~ '  # 浏览器标签页中的标题分隔符，效果： 文章名 ~ 站点名
 
@@ -198,18 +198,18 @@ disqus:
 # You can get yout ClientID and ClientSecret from https://github.com/settings/applications/new
 # More info available at https://github.com/gitalk/gitalk#options
 gitalk:
-  clientID: cbf8fb8a51aff41416e3                    # GitHub Application Client ID
-  clientSecret: b5b2229a80bf94074fbe53aa502edefd17a2ab9c                # GitHub Application Client Secret
-  repo: happy-yuxuan.github.io                        # The repo to store comments
-  owner: happy-yuxuan                       # GitHub repository owner. Can be personal user or organization.
-  admin: happy-yuxuan                       # GitHub repo owner and collaborators, only these guys can initialize github issues, should be like "['admin']" or "['admin1','admin2']"
-  id: location.pathname         # The unique id of the page. Length must less than 50.
-  language: zh-CN               # Localization language key, en, zh-CN and zh-TW are currently available.
-  labels: "['Gitalk']"          # GitHub issue labels.
-  perPage: 15                   # Pagination size, with maximum 100.
-  pagerDirection: last          # Comment sorting direction, available values are last and first.
-  distractionFreeMode: false    # Facebook-like distraction free mode.
-  createIssueManually: true     # By default, Gitalk will create a corresponding github issue for your every single page automatically when the logined user is belong to the admin users. You can create it manually by setting this option to true.
+  clientID: cbf8fb8a51aff41416e3  # GitHub Application Client ID
+  clientSecret: b5b2229a80bf94074fbe53aa502edefd17a2ab9c  # GitHub Application Client Secret
+  repo: happy-yuxuan.github.io  # The repo to store comments
+  owner: happy-yuxuan  # GitHub repository owner. Can be personal user or organization.
+  admin: happy-yuxuan  # GitHub repo owner and collaborators, only these guys can initialize github issues, should be like "['admin']" or "['admin1','admin2']"
+  id: location.pathname  # The unique id of the page. Length must less than 50.
+  language: zh-CN  # Localization language key, en, zh-CN and zh-TW are currently available.
+  labels: "['Gitalk']"  # GitHub issue labels.
+  perPage: 15  # Pagination size, with maximum 100.
+  pagerDirection: last  # Comment sorting direction, available values are last and first.
+  distractionFreeMode: true  # Facebook-like distraction free mode.
+  createIssueManually: true  # By default, Gitalk will create a corresponding github issue for your every single page automatically when the logined user is belong to the admin users. You can create it manually by setting this option to true.
 
 # Valine
 # You can get your appid and appkey from https://leancloud.cn
