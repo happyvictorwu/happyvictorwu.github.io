@@ -10,8 +10,6 @@ tags:
 
 # STL & C++刷题技巧
 
-<!--more-->
-
 | 容器 | 头文件 | 方法 | 备注 |
 | :-: | :-: | :-: | :-: |
 | **vector** | vector | `push_back/pop_back` `resize` `erase` `front/back` `begin/ end` `size/clear/empty` `[]`| resize的参数跟初始化一样 |
@@ -28,18 +26,27 @@ tags:
 | **其他** | | `max_element` `lower_bound` `next_permutation` |  ！！！ 用`.size()`不要拿它做减法，返回的是`unsigned int`无符号整数做减法不会小于0 |
 
 
+
 # 常用
+
 ## 保留几位小数
+
 ```c++
 printf("%.6f", k);  // 保留6位小数   (double - printf - %f) (doubel - scanf - %lf)
 ```
 
+
+
 ## 输入字符串包括空格
+
 ```c++
 getline(cin,str);   // str 为 string
 ```
 
+
+
 ## 输入直到文字流结束 （ctrl + z）
+
 ```c++
 // scanf
 while (scanf("%d %d",&a, &b) != EOF) {
@@ -53,6 +60,8 @@ while (!cin.eof()) {
 }
 ```
 
+
+
 ## to_string() 函数 (把数字转成字符串的相互转换，负数也可以)
 
 ```c++
@@ -64,12 +73,17 @@ double f_double = stod(f);   //转换回double  23.43
 
 __PS： char转成字符串 `string(1, c)`, 不能用to_string(c),这样是在转换成c的ASCII码__
 
+
+
 ## pair
 
 * pair对于排序来说是以first为第一关键字排序， second为第二关键字排序
 * 赋值的时候可以使用花括号代替`{1, 2}`
 
+
+
 ## memset
+
 只能做这3个值
 每4个字节赋值， Ox3f3f3f3f 大约是10^9次方多一点点
 ```c++
@@ -79,7 +93,9 @@ memset(h, 0x3f, sizeof h);  // memset这个函数是按字节来赋值的，int�
 ```
 
 
+
 ## sort的比较函数的几种写法 （默认从小到大）
+
 ```c++
 // 对vector排序
 sort(v.begin(), v.end(), [](const int& a, const int& b){return a > b;});
@@ -88,7 +104,10 @@ sort(v.begin(), v.end(), [](const int& a, const int& b){return a > b;});
 sort(arr, arr + 100);
 ```
 
+
+
 ## lower_bound
+
 找到一个大于等于这个数的位置的迭代器
 ```c++
 pos = lower_bound( number, number + 8, 3) - number  // number数组的下标为0的位置开始
@@ -97,7 +116,10 @@ pos = lower_bound( number, number + 8, 3) - number  // number数组的下标为0
 int pos = distance(v.begin(), lower_bound(v.begin(), v.end(), 3));
 ```
 
+
+
 ## 一维 <--> 二维
+
 ```
 第k个元素 -> n * m的矩阵a (都从0开始)
 
@@ -110,7 +132,9 @@ int pos = distance(v.begin(), lower_bound(v.begin(), v.end(), 3));
 ```
 
 
+
 ## 自定义结构体并重载小于号 
+
 * 结构体`=`为赋值操作，是整个结构体赋值过去。 而类只是浅拷贝
 * LeetCode中要写在类的外面
 * 写在类中LeetCode需要在前面加friend。[参考](http://www.voidcn.com/article/p-okwlzxpt-zm.html)
@@ -141,6 +165,8 @@ Node n1(1, 2);
 ```
 
 * 为什么重载<号要这样写，而不写成`return a.p1 < b.p1 || a.p1 == b.p1 && a.p2 < b.p2`？因为p1和p2是int，他们虽然有重载`==`。但是对于没有重载`==`来说,只须重载小于运算符. [参考文献](https://blog.csdn.net/dpfordor/article/details/1958077)
+
+
 
 ## 堆之标准比较器构造 (对于指针来说可以使用)
 
@@ -181,28 +207,40 @@ int main()
 
 ```
 
+
+
 ## cin优化
+
 ```
 // 两句话一起写
 ios::sync_with_stdio(false);
 cin.tie(0);
 ```
 
+
+
 ## swap交换两个vector
+
 * O(1)时间，实质是指针交换
 
 ```c++
 swap(v1, v2);
 ```
 
+
+
 ## max函数多参数
+
 * C++ 11之后支持传入参数初始化列表
 
 ```c++
 int mx = max({a, b, c, d});    // a, b, c, d的最大值
 ```
 
+
+
 ## 位运算
+
 * 数的最高位是符号位
 * 左移去掉最高位，然后左边补0。 
 * 右移根据正数还是负数决定。 正数最高位补0， 负数补1
@@ -212,32 +250,49 @@ int mx = max({a, b, c, d});    // a, b, c, d的最大值
 * 取反操作 `~`
 
 
+
 ## 生成随机数
+
 `a <= x <= b`
 
 * 方法一：两者差值不能超过INT_MAX
 
-```c++
-srand(time(0));  // 先设置随机种子
+    ```c++
+    srand(time(0));  // 先设置随机种子
 
-int randX(int a, int b) {   // a b数的差值不能超过INT_MAX
-    return a + (rand() % (b - a + 1));
-}
+    int randInt(int a, int b) {   // a b数的差值不能超过INT_MAX
+        return a + (rand() % (b - a + 1));
+    }
 
-// 生成方法
-int n = randX(1, 100);   // n ∈ [1, 100]
-```
+    // 生成方法
+    int n = randX(1, 100);   // n ∈ [1, 100]
+    ```
 
 * 方法二：int间的任何数
 
-```c++
-typedef long long ll;
-int myrand(int mod) { return ((ll)rand()<<32^(ll)rand()<<16^rand())%mod; }
-#define random(a, b)((a) + myrand((b) - (a) + 1)) // Integer[a,b]
+    ```c++
+    typedef long long ll;
+    int myrand(int mod) { return ((ll)rand()<<32^(ll)rand()<<16^rand())%mod; }
+    #define random(a, b)((a) + myrand((b) - (a) + 1)) // Integer[a,b]
 
-// 生成方法
-int n = random(INT_MIN, INT_MAX);  // n ∈ [-2147483648, 2147483647]
-```
+    // 生成方法
+    int n = random(INT_MIN, INT_MAX);  // n ∈ [-2147483648, 2147483647]
+    ```
+
+* 库函数C++11
+
+  ```c++
+  default_random_engine e(time(0));
+  
+  int randInt(int a, int b) {
+      return a + (e() % (b - a + 1));
+  }
+  
+  // 生成方法
+  int n = randX(1, 100);   // n ∈ [1, 100]
+  ```
+
+  
 
 ## 通过迭代器来初始化容器 hash表 < -- > vector
 
@@ -256,6 +311,8 @@ vector<pair<int, int>> a2(mp.begin(), mp.end());  // map -> vector
 unordered_set<char> se(word.begin(), word.end()); //word 为 string
 ```
 
+
+
 ## 容器元素为pair的时候不要使用引用
 
 ```c++
@@ -264,4 +321,5 @@ deque<pair<int, int>> q;
 // auto& t = q.front();   // 不要添加引用, 会出现意想不到的错误
 auto t = q.front();
 ```
+
 
