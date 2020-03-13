@@ -323,3 +323,37 @@ auto t = q.front();
 ```
 
 
+
+## Map Set遍历时迭代器删除
+
+* 在一边遍历一边删除的时候，可能会引发一下问题，需要正确使用。
+* 插入同理
+
+```c++
+map<char, int> counts;
+
+// 删除
+counts.erase(it++);
+
+// 反向
+counts.erase(next(rit).base());   // c++ 11
+counts.erase(--(rit.base()));   // c++ 11以下
+```
+
+```c++
+// 正向
+for (auto it = mp.begin(); it != mp.end(); ) {
+    if (it->second == 2)
+        mp.erase(it++);
+    else 
+        it++;   // c++11后可以用 it = next(it);
+}
+
+// 反向
+for (auto rit = mp.rbegin(); rit != mp.rend(); ) {
+    if (rit->second == 2)
+        mp.erase(--(rit.base()));  // c++ 11可以使用 mp.erase(next(rit).base());
+    else 
+        rit++;
+}
+```
