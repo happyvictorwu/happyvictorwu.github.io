@@ -168,7 +168,7 @@ Node n1(1, 2);
 
 
 
-## 堆之标准比较器构造 (对于指针来说可以使用)
+## 堆之标准比较器构造 (对于指针来说可以使用，比较器是反的)
 
 ```c++
 
@@ -181,8 +181,8 @@ int main()
     
     Compare comparator = [](const Node& a, const Node& b) {
         if (a.second == b.second)
-            return a.first < b.first;    // order by alphabet  ASC
-        return a.second > b.second;    // order by freq DESC
+            return a.first < b.first;   
+        return a.second > b.second;   
     };
     
     // Min heap by frequency
@@ -200,7 +200,7 @@ int main()
     
     
     Compare cmp = [](const ListNode *a, const ListNode *b) {
-            return a->val > b->val;
+            return a->val < b->val;
     };
     // 大根堆
     priority_queue<ListNode*, vector<ListNode*>, Compare> q(cmp);
@@ -355,5 +355,19 @@ for (auto rit = mp.rbegin(); rit != mp.rend(); ) {
         mp.erase(--(rit.base()));  // c++ 11可以使用 mp.erase(next(rit).base());
     else 
         rit++;
+}
+```
+
+## String查找字符串
+
+```c++
+string s1 = "abcd";
+string s2 = "ab";
+
+// 判断s1中是否有s2
+if (s1.find(s2) == std::string::npos) {
+    // 没有找到
+} else{
+    // 找到了
 }
 ```
