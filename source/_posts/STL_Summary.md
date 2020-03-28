@@ -371,3 +371,16 @@ if (s1.find(s2) == std::string::npos) {
     // 找到了
 }
 ```
+
+## map迭代访问
+
+```c++
+unordered_map<char, int> mp;
+
+for (auto& [key, value] : mp) { }  
+
+for (auto& kv : mp) {
+    char key = kv.first;
+    int value = kv.second;
+}
+```
