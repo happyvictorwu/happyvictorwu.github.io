@@ -29,7 +29,7 @@ tags:
 
 # 常用
 
-## 保留几位小数
+## 输出保留小数
 
 ```c++
 printf("%.6f", k);  // 保留6位小数   (double - printf - %f) (doubel - scanf - %lf)
@@ -37,7 +37,7 @@ printf("%.6f", k);  // 保留6位小数   (double - printf - %f) (doubel - scanf
 
 
 
-## 输入字符串包括空格
+## cin以回车分隔
 
 ```c++
 getline(cin,str);   // str 为 string
@@ -45,7 +45,17 @@ getline(cin,str);   // str 为 string
 
 
 
-## 输入直到文字流结束 （ctrl + z）
+## cin优化
+
+```c++
+// 两句话一起写
+ios::sync_with_stdio(false);
+cin.tie(0);
+```
+
+
+
+## EOF
 
 ```c++
 // scanf
@@ -58,13 +68,16 @@ while (!cin.eof()) {
     cin >> a >> b;
     cout << a + b << endl;
 }
+
+// ctrl + z 结束
 ```
 
 
 
-## to_string() 函数 (把数字转成字符串的相互转换，负数也可以)
+## to_string()
 
 ```c++
+// 把数字转成字符串的相互转换，负数也可以
 double f = 23.43
 string f_str = to_string(f);    // 23.430000
 
@@ -84,8 +97,8 @@ __PS： char转成字符串 `string(1, c)`, 不能用to_string(c),这样是在�
 
 ## memset
 
-只能做这3个值
 每4个字节赋值， Ox3f3f3f3f 大约是10^9次方多一点点
+
 ```c++
 memset(h, -1, sizeof h);
 memset(h, 0, sizeof h);
@@ -102,9 +115,11 @@ memset(h, 0xc0, sizeof h);  // memset这个函数是按字节来赋值的，int�
 
 
 
-## sort的比较函数的几种写法 （默认从小到大）
+## sort
 
 ```c++
+// 默认从小到大
+
 // 对vector排序
 sort(v.begin(), v.end(), [](const int& a, const int& b){return a > b;});
 
@@ -117,19 +132,30 @@ sort(arr, arr + 100);
 ## lower_bound
 
 找到一个大于等于这个数的位置的迭代器
-```c++
-pos = lower_bound( number, number + 8, 3) - number  // number数组的下标为0的位置开始
 
+区别map set的lower_bound内嵌在容器方法中
+
+```c++
+// 数组：number数组的下标为0的位置开始
+pos = lower_bound( number, number + 8, 3) - number  
+
+// vector： 获得当前迭代器
+auto it = lower_bound(v.begin(), v.end(), 3); 
 // 容器只可以返回迭代器， 然后使用distance函数判断跟begin()的距离
-int pos = distance(v.begin(), lower_bound(v.begin(), v.end(), 3));
+int pos = distance(v.begin(), it);
+
+// map set ： 获得第一个大于等于当前数的迭代器
+mp.lower_bound(2);
 ```
 
 
 
 ## 一维 <--> 二维
 
-```
-第k个元素 -> n * m的矩阵a (都从0开始)
+下标从0开始
+
+```c++
+// 第k个元素 -> n * m的矩阵a (都从0开始)
 
 // 一维转二维 k -> [x][y]
  x = k / m;
@@ -141,7 +167,7 @@ int pos = distance(v.begin(), lower_bound(v.begin(), v.end(), 3));
 
 
 
-## 自定义结构体并重载小于号 
+## 结构体重载小于号 
 
 * 结构体`=`为赋值操作，是整个结构体赋值过去。 而类只是浅拷贝
 * LeetCode中要写在类的外面
@@ -156,14 +182,14 @@ struct Node {
 };
 
 // 推荐方式 !!!!!!! 
-bool operator<(const Node& a, const Node& b)
+bool operator< (const Node& a, const Node& b)
 {
     if (a.p1 == b.p1) return a.p2 < b.p2;
     return a.p1 < b.p1;
 }
 
 // 以p1为第一关键字， p2为第二关键字排序  && 优先级比 || 高
-bool operator<(const Node& a, const Node& b)
+bool operator< (const Node& a, const Node& b)
 {
     // return a.p1 < b.p1 || !(b.p1 < a.p1) && a.p2 < b.p2;
     return a.p1 < b.p1 || a.p1 == b.p1 && a.p2 < b.p2;
@@ -176,7 +202,23 @@ Node n1(1, 2);
 
 
 
-## 堆之标准比较器构造 (对于指针来说可以使用，比较器是反的)
+## 堆-比较器
+
+(对于指针来说可以使用，比较器是反的)
+
+推荐方式：重载()运算
+
+```c++
+struct cmp {
+    bool operator() (pair<int, int> &a, pair<int, int> &b) {
+        return a.first + a.second < b.first + b.second;// 两者的和作为key  逻辑是反的，所以是大根堆
+    }
+};
+
+priority_queue<pair<int, int>, vector<pair<int, int>>, cmp> q;   // pair<int, int> 整体作为key，不写cmp默认第一个关键字作为key
+```
+
+c++11
 
 ```c++
 
@@ -205,8 +247,6 @@ int main()
 ```c++
     typedef function<bool(const ListNode*, const ListNode*)> Compare;
     
-    
-    
     Compare cmp = [](const ListNode *a, const ListNode *b) {
             return a->val < b->val;
     };
@@ -217,17 +257,7 @@ int main()
 
 
 
-## cin优化
-
-```
-// 两句话一起写
-ios::sync_with_stdio(false);
-cin.tie(0);
-```
-
-
-
-## swap交换两个vector
+## swap交换vector
 
 * O(1)时间，实质是指针交换
 
@@ -237,7 +267,7 @@ swap(v1, v2);
 
 
 
-## max函数多参数
+## max多参数
 
 * C++ 11之后支持传入参数初始化列表
 
@@ -302,10 +332,10 @@ int mx = max({a, b, c, d});    // a, b, c, d的最大值
 
   
 
-## 通过迭代器来初始化容器 hash表 < -- > vector
+## 迭代器初始化容器
 
 * set(map) <-> vector <-> string
-* 总之有迭代器的都可以。 stack 和 queue没有
+* **总之有迭代器的都可以**。 stack 和 queue没有
 
 ```c++
 vector<int> a = {3, 2, 1};
@@ -321,7 +351,7 @@ unordered_set<char> se(word.begin(), word.end()); //word 为 string
 
 
 
-## 容器元素为pair的时候不要使用引用
+## pair不要使用引用
 
 ```c++
 deque<pair<int, int>> q;
@@ -332,7 +362,7 @@ auto t = q.front();
 
 
 
-## Map Set遍历时迭代器删除
+## Map Set遍历时删除迭代器
 
 * 在一边遍历一边删除的时候，可能会引发一下问题，需要正确使用。
 * 插入同理
@@ -366,6 +396,8 @@ for (auto rit = mp.rbegin(); rit != mp.rend(); ) {
 }
 ```
 
+
+
 ## String查找字符串
 
 ```c++
@@ -380,12 +412,16 @@ if (s1.find(s2) == std::string::npos) {
 }
 ```
 
+
+
 ## map迭代访问
 
 ```c++
 unordered_map<char, int> mp;
 
 for (auto& [key, value] : mp) { }  
+
+for (auto& [_, value] : mp) { }   // 不要key
 
 for (auto& kv : mp) {
     char key = kv.first;
