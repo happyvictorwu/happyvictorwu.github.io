@@ -104,6 +104,7 @@ memset(h, -1, sizeof h);
 memset(h, 0, sizeof h);
 memset(h, 0x3f, sizeof h);  // memset这个函数是按字节来赋值的，int有4个字节，所以把每个字节都赋值成0x3f以后就是0x3f3f3f3f。  大于10的9次方
 memset(h, 0xc0, sizeof h);  // memset这个函数是按字节来赋值的，int有4个字节，所以把每个字节都赋值成0x3f以后就是0xc0c0c0c0。
+memset(dp[0], 0x3f, sizeof dp);  // memset一维 sizeof dp是指第一个类型的大小
 
 // "较": 相加不溢出
 较大值：0x3f  // 16进制(0x3f3f3f3f) = 10进制(1061109567) > 1e9
