@@ -144,53 +144,6 @@
     
     
     <div class="col-12 col-md-8 mx-auto index-info">
-      <a href="/2019/02/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/">
-        <p class="h4 index-header">快速排序</p>
-      </a>
-
-      <a href="/2019/02/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/">
-        
-        
-          
-        
-        <div class="index-excerpt" >
-          <div class="index-text mb-1">快速排序算法快速排序均摊时间：O(nlogn) &amp; 空间：O(logn)
-
-在数组选一个数v(选中间的)，把数组左边变成&lt;=v，右边变成&gt;=v,使用分治的思想，分别对左边和右边进行快速排序
-理论上最优的策略是以他的中位数来做为划分依据, 让其划分得均匀
-
-注意：partition返回的是j，而不是i。
-解释：partition 返回j的原因：partition假如以中点向下取整(l + r &gt;&gt; 1), 只剩下两个数的时候(如 1 2) 就会以左边的1为基准值x，i 和 j 最后会cross over，因为是do while循环， i会到2的位置， j会到1的位置。 这样左边(l, j)是小于等于1， 右边(i, r)是大于等于1.这样不会死循环。若返回i就会发生划分的左边死循环，一直是(1, 2)划分，无限递归下去。
-若要返回i， 跟二分很像，则需要以中点向上取整(l + r + 1 &gt;&gt; 1)。 同理，还是以数组剩下两个元素（1， 2）为例， 基准值x取2. 当i, j cross over之后， 左边小于等于2为(l, i - 1), </div>
-        </div>
-      </a>
-
-      <div class="index-btm">
-        
-          <i class="iconfont icon-riqi2"></i>&nbsp;2019-02-01&nbsp;&nbsp;
-        
-        
-          <i class="iconfont icon-inbox"></i>
-          
-            <a href="/categories/%E7%AE%97%E6%B3%95">算法</a>&nbsp;
-          
-            <a href="/categories/%E5%9F%BA%E7%A1%80">基础</a>&nbsp;
-          &nbsp;
-        
-        
-          <i class="iconfont icon-tag"></i>
-          
-            <a href="/tags/%E7%BC%96%E7%A8%8B">编程</a>&nbsp;
-          
-        
-      </div>
-    </div>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <div class="col-12 col-md-8 mx-auto index-info">
       <a href="/2019/02/01/%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/">
         <p class="h4 index-header">归并排序</p>
       </a>
@@ -220,6 +173,53 @@ void merge_sort(int a[], int l, int r) {
     if (l &gt;= r) return;
 
     in</div>
+        </div>
+      </a>
+
+      <div class="index-btm">
+        
+          <i class="iconfont icon-riqi2"></i>&nbsp;2019-02-01&nbsp;&nbsp;
+        
+        
+          <i class="iconfont icon-inbox"></i>
+          
+            <a href="/categories/%E7%AE%97%E6%B3%95">算法</a>&nbsp;
+          
+            <a href="/categories/%E5%9F%BA%E7%A1%80">基础</a>&nbsp;
+          &nbsp;
+        
+        
+          <i class="iconfont icon-tag"></i>
+          
+            <a href="/tags/%E7%BC%96%E7%A8%8B">编程</a>&nbsp;
+          
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-8 mx-auto index-info">
+      <a href="/2019/02/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/">
+        <p class="h4 index-header">快速排序</p>
+      </a>
+
+      <a href="/2019/02/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/">
+        
+        
+          
+        
+        <div class="index-excerpt" >
+          <div class="index-text mb-1">快速排序算法快速排序均摊时间：O(nlogn) &amp; 空间：O(logn)
+
+在数组选一个数v(选中间的)，把数组左边变成&lt;=v，右边变成&gt;=v,使用分治的思想，分别对左边和右边进行快速排序
+理论上最优的策略是以他的中位数来做为划分依据, 让其划分得均匀
+
+注意：partition返回的是j，而不是i。
+解释：partition 返回j的原因：partition假如以中点向下取整(l + r &gt;&gt; 1), 只剩下两个数的时候(如 1 2) 就会以左边的1为基准值x，i 和 j 最后会cross over，因为是do while循环， i会到2的位置， j会到1的位置。 这样左边(l, j)是小于等于1， 右边(i, r)是大于等于1.这样不会死循环。若返回i就会发生划分的左边死循环，一直是(1, 2)划分，无限递归下去。
+若要返回i， 跟二分很像，则需要以中点向上取整(l + r + 1 &gt;&gt; 1)。 同理，还是以数组剩下两个元素（1， 2）为例， 基准值x取2. 当i, j cross over之后， 左边小于等于2为(l, i - 1), </div>
         </div>
       </a>
 
