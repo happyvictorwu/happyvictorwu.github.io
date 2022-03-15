@@ -1,0 +1,945 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>iOS静态库总结</title>
+    <link href="/2020/03/31/iOS%E9%9D%99%E6%80%81%E5%BA%93%E6%80%BB%E7%BB%93/"/>
+    <url>/2020/03/31/iOS%E9%9D%99%E6%80%81%E5%BA%93%E6%80%BB%E7%BB%93/</url>
+    
+    <content type="html"><![CDATA[<h1 id="iOS静态库使用总结"><a href="#iOS静态库使用总结" class="headerlink" title="iOS静态库使用总结"></a>iOS静态库使用总结</h1><h2 id="总体流程"><a href="#总体流程" class="headerlink" title="总体流程"></a>总体流程</h2><ol><li>创建Cocoa Touch Static Library 实现对应的逻辑</li><li>设置暴露的头文件</li><li>模拟器和真机分别编译。 （分release和debug，可以在Edit Scheme中 Build Configuration中选择debug或者release,对外提供的framework尽量是relese版本）</li><li>合并静态库 <code>lipo -create xx1.a x2.a -output xx3.a</code> （把静态库xx1和xx2，合并成一个 xx3静态库）</li></ol><ul><li>静态库是iOS中资源打包的方式  <code>.a</code>文件 （在Product文件夹中）</li><li>需要手动引入头文件使用</li><li>一般要设置Other Linker Flags 等</li></ul><h2 id="PS"><a href="#PS" class="headerlink" title="PS"></a>PS</h2><ul><li>因为静态库<code>.a</code>文件是一个二进制文件，需要在Target-Build Phases-Copy Files中添加对应的头文件。编译之后，会在Product include文件夹中得到暴露的头文件，配合二进制的文件，使用者就可以使用静态库</li><li>每次编译的时候会在Product文件生成<code>.a</code>。真机和模拟器的架构不一样，需要分别编译然后合成成一个来方便调试（第四步）。但是在上线项目是不需要打包模拟器版本的，原因是减伤包的体积。</li></ul><h2 id="使用静态库流程"><a href="#使用静态库流程" class="headerlink" title="使用静态库流程"></a>使用静态库流程</h2><ol><li>在项目创建一个Group（文件夹），想添加普通文件一样把静态库<code>.a</code>和其对应的头文件添加入Group中<ul><li>（右键点击Show in finder, 先把文件拖入finder中文件夹，回到Xcode中 Add Files to “<GroupName>“ .）</li></ul></li><li>重新编译项目</li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+      <category>静态库</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>位运算压缩坐标(x, y)的技巧以及背后原理</title>
+    <link href="/2020/03/13/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%8E%8B%E7%BC%A9%E5%9D%90%E6%A0%87/"/>
+    <url>/2020/03/13/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%8E%8B%E7%BC%A9%E5%9D%90%E6%A0%87/</url>
+    
+    <content type="html"><![CDATA[<h1 id="使用位运算压缩坐标-x-y-的技巧以及背后原理"><a href="#使用位运算压缩坐标-x-y-的技巧以及背后原理" class="headerlink" title="使用位运算压缩坐标(x, y)的技巧以及背后原理"></a>使用位运算压缩坐标(x, y)的技巧以及背后原理</h1><ul><li>把一个<code>int型</code>坐标(x, y)转换成一个<code>long long类型</code>的整数，方便存储位置状态。</li></ul><h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><p>假如题目给了很多坐标，需要保存坐标的唯一标识，从而表示坐标的状态信息。</p><ul><li><p>因为坐标是int型是32位的(64位机)，而long long类型是64位的。 所以可以让高的32保存x的坐标，低32位保存y的坐标。</p></li><li><p>在编码(encode)的使用，先把x坐标和y坐标转换成long long类型，并向左移32位(左移补0)。然后用把当前数按位或y坐标。得到低32位是y，高32位是x。</p></li><li>在解码(decode)的时候，获得y坐标直接把编码后的数point强制类型转换成int(强制类型转换直接取低32位)。取x坐标要先把point右移32位再强制类型转换获得x坐标。</li></ul><p><em>PS：假如坐标有负数，需要在encode的时候需要在强转后把y的前32位置成0，因为负数int强制类型转换成long long高32位会补1(正数补0，计算机保存的是数的补码，整数的补码跟本身一样，负数的补码要取反+1)增加<code>y &amp;= 0x00000000ffffffff;</code> 把高32位置0， 这样按位或就能保存x的值了。</em></p><p>举一个栗子：<br><code>x = 60, y = -32760</code> 计算机<strong>补码</strong>保存如下：</p><p><code>x = 0000 0000 0000 0000 0000 0000 0011 1100</code><br><code>y = 1111 1111 1111 1111 1000 0000 0000 1000</code><br>强制类型转换成long long类型64位<br><code>x = 00000000000000000000000000000000 0000 0000 0000 0000 0000 0000 0011 1100</code><br><code>y = 11111111111111111111111111111111 1111 1111 1111 1111 1000 0000 0000 1000</code><br>按位与</p><p>x: <code>0000 0000 0000 0000 0000 0000 0011 1100</code> <code>0000 0000 0000 0000 0000 0000 0000 0000</code> (x右移32位)<br>y: <code>0000 0000 0000 0000 0000 0000 0000 0000</code> <code>1111 1111 1111 1111 1000 0000 0000 1000</code> (把y的高32位置成0)</p><p>p: <code>0000 0000 0000 0000 0000 0000 0011 1100</code> <code>1111 1111 1111 1111 1000 0000 0000 1000</code></p><p>p为压缩后的坐标。</p><h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>由<code>encode</code>和<code>decode</code>方法</p><h4 id="encode"><a href="#encode" class="headerlink" title="encode"></a>encode</h4><pre><code class="lang-c++">// 都是正数（比如坐标）long long encode(long long x, long long y) {    return x &lt;&lt; 32 | y;}</code></pre><h4 id="decode"><a href="#decode" class="headerlink" title="decode"></a>decode</h4><pre><code class="lang-c++">pair&lt;int, int&gt; decode(long long point) {    return {(int)(point &gt;&gt; 32), (int)point};}</code></pre><h4 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h4><pre><code class="lang-c++">// 使用例子， 把坐标放到各个容器中，以queue为例queue&lt;long long&gt; q;int x = 299, y = -40;  // (x, y) == (299, -40)q.push(encode(x, y);  // 把坐标状态压入队列pair&lt;int, int&gt; point = decode(q.front());   // 取出状态还原坐标 // point.first == 299,   point.second == -40</code></pre><p>PS：<br>x, y有可能是负数的encode方式要发生一些变化</p><pre><code class="lang-c++">// x, y有可能是负数long long encode(long long x, long long y) {    y &amp;= 0x00000000ffffffff;   // 去掉高32位的1，负数强转是补1    if (x &lt; 0) {   // 因为负数的左移操作没有意义，所以将x转成正数移位做        x = -x;        x &lt;&lt;= 32;        x = -x;    } else {        x &lt;&lt;= 32;    }    return x | y;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>位运算</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>STL平衡树中迭代删除的坑</title>
+    <link href="/2020/03/09/%E5%B9%B3%E8%A1%A1%E6%A0%91%E4%B8%AD%E8%BF%AD%E4%BB%A3%E5%88%A0%E9%99%A4/"/>
+    <url>/2020/03/09/%E5%B9%B3%E8%A1%A1%E6%A0%91%E4%B8%AD%E8%BF%AD%E4%BB%A3%E5%88%A0%E9%99%A4/</url>
+    
+    <content type="html"><![CDATA[<h1 id="STL平衡树中迭代删除的坑"><a href="#STL平衡树中迭代删除的坑" class="headerlink" title="STL平衡树中迭代删除的坑"></a>STL平衡树中迭代删除的坑</h1><p><em>昨天在map中在使用反向迭代器过程中删除的时候引发一些问题。死循环或者段错误，顾总结一下这个坑</em></p><h2 id="正向遍历删除"><a href="#正向遍历删除" class="headerlink" title="正向遍历删除"></a>正向遍历删除</h2><p>倘若有一个需求让你在map中操作，按key<strong>从小到大</strong>遍历，把全部key对应的value值为2的key从map中删除。</p><p>先上结论：</p><pre><code class="lang-c++">// 正确写法for (auto it = mp.begin(); it != mp.end(); ) {    if (it-&gt;second == 2)        mp.erase(it++);    else         it++;   // c++11后可以用 it = next(it);}</code></pre><pre><code class="lang-c++">// 错误写法for (auto it = mp.begin(); it != mp.end(); it++) {    if (it-&gt;second == 2)        mp.erase(it);}</code></pre><ul><li>对 list 和 vector 来说，它们的 erase 函数会返回下一个迭代器，因此在遍历时，只需要 <code>it = c.erase(it)</code> 即可。</li></ul><ul><li><p>对 map 和 set 来说，它们的 erase 函数返回的 void，而在进行 erase 之后，<strong>当前迭代器会失效，无法再用于获取下一个迭代器</strong>。因此需要 erase 之前就获取指向下一个元素的迭代器。如： </p><pre><code class="lang-c++">auto tmpIt = it;++it;mp.erase(tmpIt);</code></pre><pre><code class="lang-c++">// 利用后缀++操作符的特性（先创建副本，然后再递增迭代器，然后返回副本）//上面的三行代码可以简化为一行：mp.erase(it++);</code></pre></li></ul><h2 id="逆向删除"><a href="#逆向删除" class="headerlink" title="逆向删除"></a>逆向删除</h2><p>同样问题，只是改成从大到小遍历：倘若有一个需求让你在map中操作，按key<strong>从大到小</strong>遍历，把全部key对应的value值为2的key从map中删除。</p><pre><code class="lang-c++">// 正确写法for (auto rit = mp.rbegin(); rit != mp.rend(); ) {    if (rit-&gt;second == 2)        mp.erase(--(rit.base()));  // c++ 11可以使用 mp.erase(next(rit).base());    else         rit++;}</code></pre><p>原理解释： 借用一个图来说明问题</p><p><img src="https://i.cmpnet.com/ddj/cuj/images/cuj0106smeyers/diagram2.gif" srcset="/img/loading.gif" alt=""></p><p>首先， erase函数是<strong>不接受反向迭代器作为参数</strong>， 所以需要转化成正向迭代器进行传入。</p><p>其次， <em>关于正向/反向迭代器的关系，请参考《Effective STL》</em>两者<strong>相差一个元素</strong>，从一个<strong>反向迭代器获得对应的正向迭代器</strong>需要使用 <code>base()</code>方法。如下图所示：ri 是指向元素3的反向迭代器，而<code>i</code>是<code>ri.base()</code>所得到的正向迭代器。</p><p>最后，需要对得到的i进行自减操作，就会到3这个位置，从而进行删除。</p><pre><code class="lang-c++">mp.erase(--(rit.base()));   // 先获得正向迭代器，再--操作偏移一个得到当前所在的位置</code></pre><pre><code class="lang-c++">// c++11可以写成mp.erase(next(rit).base());   // 或者rit先向左边走一格，在取base()也可以// 但不能写成，有大神可以告诉我为什么吗？ 待定解决问题mp.erase((++rit).base());   // 在删除剩下的最后一个数的时候会死循环</code></pre><blockquote><p><strong>参考文献</strong>：<a href="https://stackoverflow.com/questions/1830158/how-to-call-erase-with-a-reverse-iterator" target="_blank" rel="noopener">stack overflow连接 </a></p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>C++</category>
+      
+      <category>STL</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>洗牌算法及其验证</title>
+    <link href="/2020/03/04/%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95%E5%8F%8A%E5%85%B6%E9%AA%8C%E8%AF%81/"/>
+    <url>/2020/03/04/%E6%B4%97%E7%89%8C%E7%AE%97%E6%B3%95%E5%8F%8A%E5%85%B6%E9%AA%8C%E8%AF%81/</url>
+    
+    <content type="html"><![CDATA[<h2 id="洗牌"><a href="#洗牌" class="headerlink" title="洗牌"></a>洗牌</h2><p>分析洗牌算法正确性的准则：<strong>产生的结果必须有 n! 种可能</strong>，否则就是错误的。这个很好解释，因为一个长度为 n 的数组的全排列就有 n! 种，也就是说打乱结果总共有 n! 种。算法必须能够反映这个事实，才是正确的。</p><pre><code class="lang-c++">void shuffle(int[] arr) {    int n = arr.length();    for (int i = 0 ; i &lt; n; i++) {        int rand = randInt(i, n - 1);  // 从 i 到最后随机选一个元素        swap(arr[i], arr[rand]);    }}</code></pre><ul><li>对于每一个位置来说当前都有<code>n-i</code>种选法，即第0个位置有n中可能（0到n-1有n个数），第二个位置有n-1种可能以此类推。最后就有n!种可能。</li></ul><h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>洗牌算法，或者说随机乱置算法的<strong>正确性衡量标准是：对于每种可能的结果出现的概率必须相等，也就是说要足够随机。</strong></p><ul><li><p>蒙特卡罗方法近似地估计出概率是否相等</p><p>思想：类似求圆周率打点一样。在正方形纸上画一个直径为正方形边长的圆。随机往上扔石头，然后根据石头落在圆的内和圆外的数量即可估算出圆周率。</p><p><em>PS:这其实就是利用了蒙特卡罗方法：当打的点足够多的时候，点的数量就可以近似代表图形的面积。通过面积公式，由正方形和圆的面积比值是可以很容易推出圆周率的。当然打的点越多，算出的圆周率越准确</em>.</p></li><li><p>所以可以这样想，arr 数组中全都是 0，只有一个 1。我们对 arr 进行 100 万次打乱，记录每个索引位置出现 1 的次数，如果每个索引出现的次数差不多，也可以说明每种打乱结果的概率是相等的。</p></li></ul><pre><code class="lang-java">void shuffle(int[] arr);// 蒙特卡罗方法int N = 1000000;    int[] arr = {1,0,0,0,0};int[] count = new int[arr.length];for (int i = 0; i &lt; N; i++) {    shuffle(arr); // 打乱 arr    for (int j = 0; j &lt; arr.length; j++)         if (arr[j] == 1) {            count[j]++;            break;        }}for (int feq : count)     print(feq / N + &quot; &quot;); // 频率</code></pre><h2 id="对应题目"><a href="#对应题目" class="headerlink" title="对应题目"></a>对应题目</h2><p><a href="https://leetcode-cn.com/problems/shuffle-an-array/" target="_blank" rel="noopener">384. 打乱数组</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>数学</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>01BFS求最短路</title>
+    <link href="/2020/03/04/01BFS%E6%B1%82%E6%9C%80%E7%9F%AD%E8%B7%AF/"/>
+    <url>/2020/03/04/01BFS%E6%B1%82%E6%9C%80%E7%9F%AD%E8%B7%AF/</url>
+    
+    <content type="html"><![CDATA[<h1 id="01BFS求最短路"><a href="#01BFS求最短路" class="headerlink" title="01BFS求最短路"></a>01BFS求最短路</h1><h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><ul><li><p>在我以前的理解：当图的所有边权都是1的时候，求一个点到每个点的最短路径就是bfs所经过的点。因为边权是1所以每一层一定是最先到达的点。边权是非负数的时候，最短路就可以使用常见的最短路算法Dijkstra；有负数边的话SPFA等。</p></li><li><p>但是若边权只有0和1的时候，可以使用01BFS，但是要使用双端队列。扩展某个节点的时候，若边权是0则加入队首，边权是1则加入队尾。这样就可以满足每次扩展的永远是最短的（0在队首可以保证）</p></li></ul><h2 id="178周赛第四题"><a href="#178周赛第四题" class="headerlink" title="178周赛第四题"></a><a href="https://leetcode-cn.com/problems/minimum-cost-to-make-at-least-one-valid-path-in-a-grid/" target="_blank" rel="noopener">178周赛第四题</a></h2><p>收货：01BFS求最短路</p><p>问题可以抽象成构建一个图，每一个方向都可以向其四个方向建边，若需要改变方向则边权是1，若不需要改变方向边权是0。然后找<code>(0, 0)</code>点到<code>(n-1, m-1)</code>的最短路。</p><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><p>以这道题为例，因为边权是0或1可以使用<strong>01BFS</strong>求最短路</p><p>每次扩展四个边的时候，边权为0加入队首，边权为1加入队尾</p><p>代码：</p><pre><code class="lang-c++">// 32ms &amp; 18.3MBclass Solution {public:    int minCost(vector&lt;vector&lt;int&gt;&gt;&amp; grid) {        int n = grid.size(), m = grid[0].size(), tot = n * m;        int dx[4] = {0, 0, 1, -1}, dy[4] = {1, -1, 0, 0};        vector&lt;int&gt; dist(tot, -1);        deque&lt;pair&lt;int, int&gt;&gt; q;        q.push_back({0, 0});        while (!q.empty()) {            auto t = q.front(); q.pop_front();            int ver = t.second, dis = t.first;            if (dist[ver] != -1) continue;            dist[ver] = dis;            int x = ver / m, y = ver % m;            if (ver == tot - 1) return dist[ver];  // 找到提前退出            for (int k = 0; k &lt; 4; k++) {                int nx = x + dx[k], ny = y + dy[k], id = nx*m+ny;                if (nx &lt; 0 || nx &gt;= n || ny &lt; 0 || ny &gt;= m) continue;                if (grid[x][y] - 1 == k) q.push_front({dist[ver], id});  // 0加入队首                else q.push_back({dist[ver] + 1, id});  // 1加入队尾            }        }        return dist.back();    }};</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>图论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>周赛收货</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>背包问题总结</title>
+    <link href="/2020/03/04/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93/"/>
+    <url>/2020/03/04/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93/</url>
+    
+    <content type="html"><![CDATA[<h1 id="背包问题"><a href="#背包问题" class="headerlink" title="背包问题"></a>背包问题</h1><ul><li>v为体积， w为价值 <code>v, w &gt; 0</code></li></ul><h2 id="0-1背包"><a href="#0-1背包" class="headerlink" title="0-1背包"></a>0-1背包</h2><pre><code>dp(i, j) 表示选前i件物品到背包容量为j的最大价值</code></pre><pre><code>dp(i, j) = max(dp(i-1, j), dp(i-1, j-v[i]) + w[i])</code></pre><ul><li><p>转移方程解释：选前i件物体的背包容量为j的最大价值由两个状态转移过来： case1： 不选第i件物品，只在前i-1件物品中选最大价值； case2：选第i件物品，那前i-1件物品中只能选j-v[i]容量的价值。</p></li><li><p>base case：<code>dp(0, 0) = 0</code>选前0件物品到容量为j的最大价值为0</p></li><li>对于每个阶段i，求出对应背包容量[0, V]的最大价值</li></ul><h4 id="暴力"><a href="#暴力" class="headerlink" title="暴力"></a>暴力</h4><pre><code class="lang-c++">// 返回选择前i件物品在背包为j容量的最大价值int dfs(int i, int j) {    if (i == 0) return 0;    int res = dfs(i - 1, j);    if (j - v[i] &gt;= 0) res = max(res, dfs(i - 1, j - v[i]) + w[i]);    return res;}</code></pre><h4 id="记忆化搜索"><a href="#记忆化搜索" class="headerlink" title="记忆化搜索"></a>记忆化搜索</h4><pre><code class="lang-c++">// 返回选择前i件物品在背包为j容量的最大价值// memo 为 (n + 1) * (V + 1)的矩阵，初试值为-1int dfs(int i, int j) {    if (i == 0) return 0;    if (memo[i][j] != -1) return memo[i][j];   // 记忆化    int ret = dfs(i - 1, j);    if (j - v[i] &gt;= 0) ret = max(ret, dfs(i-1, j-v[i]) + w[i]);    return memo[i][j] = ret;}</code></pre><h4 id="DP-自底向上"><a href="#DP-自底向上" class="headerlink" title="DP - 自底向上"></a>DP - 自底向上</h4><pre><code class="lang-c++">dp[0][0] = 0;for (int i = 1; i &lt;= n; i++) {    for (int j = 0; j &lt;= V; j++) {        dp[i][j] = dp[i-1][j];        if (j &gt;= v[i]) dp[i][j] = max(dp[i][j], dp[i-1][j-v[i]] + w[i]);    }}</code></pre><ul><li>滚动数组把所有阶段都 <code>&amp; 1</code>就行</li></ul><h2 id="完全背包"><a href="#完全背包" class="headerlink" title="完全背包"></a>完全背包</h2><pre><code>dp(i, j) 表示选前i件物品到背包容量为j的最大价值</code></pre><pre><code>dp(i, j) = max(dp(i-1, j-k*v[i])+k*w[i]), k∈[0, j/v[i]]</code></pre><ul><li>转移方程解释：选前i件物体的背包容量为j的最大价值由k个状态转移过来：选了k个i物品，只要背包能装得下<code>j - k*v[i]&gt;= 0</code>装，所有选法的最大值</li><li><code>dp(0, 0) = 0</code>选前0件物品到容量为j的最大价值为0</li></ul><h4 id="暴力-1"><a href="#暴力-1" class="headerlink" title="暴力"></a>暴力</h4><pre><code class="lang-c++">// 选择前i个物品到背包容量为j的最大价值int dfs(int i, int j) {    if (i == 0) return 0;    int ret = 0;    for (int k = 0; k * v[i] &lt;= j; k++) {        ret = max(ret, dfs(i-1, j-k*v[i]) + k*w[i]);    }    return res;}</code></pre><h4 id="记忆化搜索-1"><a href="#记忆化搜索-1" class="headerlink" title="记忆化搜索"></a>记忆化搜索</h4><pre><code class="lang-c++">// 选择前i个物品到背包容量为j的最大价值int dfs(int i, int j) {    if (i == 0) return 0;    if (memo[i][j] != -1) return memo[i][j];  // 记忆化    int ret = 0;    for (int k = 0; k * v[i] &lt;= j; k++) {        ret = max(ret, dfs(i-1, j-k*v[i]) + k*w[i]);    }    return memo[i][j] = ret;}</code></pre><h4 id="DP-自底向上-1"><a href="#DP-自底向上-1" class="headerlink" title="DP - 自底向上"></a>DP - 自底向上</h4><pre><code class="lang-c++">for (int i = 1; i &lt;= n; i++) {    for (int j = 0; j &lt;= V; j++) {        for (int k = 0; k * v[i] &lt;= j; k++) {            dp[i][j] = max(dp[i][j], dp[i-1][j-k*v[i]] + k*w[i]);        }    }}</code></pre><h3 id="状态优化技巧"><a href="#状态优化技巧" class="headerlink" title="状态优化技巧"></a>状态优化技巧</h3><ul><li>状态转移化简，为方便些公式 <code>v[i], w[i]</code> 简写成<code>v, w</code></li></ul><pre><code>① dp(i, j) = max(dp(i-1, j),dp(i-1, j-v)+w, dp(i-1,j-2v)+2w, ..., dp(i-1,j-kv)+kw)</code></pre><pre><code>② dp(i,j-v) = max(          dp(i-1, j-v),   dp(i-1,j-2v)+w, ...,  dp(i-1,j-kv)+(k-1)w)</code></pre><p><strong>联立①②：</strong></p><pre><code>dp(i, j) = max( dp(i-1,j), dp(i,j-v)+w )</code></pre><p>PS: 跟0-1背包状态<strong>dp(i, j) = max(dp(i-1, j), dp(<code>i-1</code>, j-v[i]) + w[i])</strong> 只相差<code>i-1</code>部分</p><p><strong>更改0-1背包代码i-1变成i就行就行</strong></p><h2 id="多重背包"><a href="#多重背包" class="headerlink" title="多重背包"></a>多重背包</h2><pre><code>dp(i, j) 表示选前i件物品到背包容量为j的最大价值</code></pre><pre><code>dp(i, j) = max( dp(i-1, j-k*v[i])+k*w[i] ), k∈[0, min(s[i], j / v[i])]</code></pre><ul><li>转移方程解释：<code>s[i]</code>为物品的个数，选前i件物体的背包容量为j的最大价值由k个状态转移过来：选了k个i物品，只要选[0,s[i]]个当前物体<code>k &lt;= s[i]</code>并且背包能装得下<code>j - k*v[i]&gt;= 0</code>，所有选法的最大值</li><li><p><code>dp(0, 0) = 0</code>选前0件物品到容量为j的最大价值为0</p></li><li><p>比只朴素版的完全背包的k多了一个限制条件<code>k &lt;= s[i]</code></p></li></ul><h4 id="DP-自底向上-2"><a href="#DP-自底向上-2" class="headerlink" title="DP - 自底向上"></a>DP - 自底向上</h4><pre><code class="lang-c++">for (int i = 1; i &lt;= n; i++) {    for (int j = 0; j &lt;= V; j++) {        for (int k = 0; k * v[i] &lt;= j &amp;&amp; k &lt;= s[i]; k++) {            dp[i][j] = max(dp[i][j], dp[i-1][j-k*v[i]] + k*w[i]);        }    }}</code></pre><h3 id="状态优化"><a href="#状态优化" class="headerlink" title="状态优化"></a>状态优化</h3><ul><li>二进制优化待定</li></ul><h2 id="分组背包"><a href="#分组背包" class="headerlink" title="分组背包"></a>分组背包</h2><pre><code>dp(i, j) 表示选前i组物品到背包容量为j的最大价值</code></pre><pre><code>dp(i, j) = max(dp(i-1, j), dp(i-1, j-v(i,k)+w(i,k))</code></pre><ul><li>转移方程解释：v(i, k)，w(i, k)分别代表第i组第k个物品的体积和价值。选前i组物体的背包容量为j的最大价值由k个状态转移过来：不选当前第i组的物品；选第k个第i组的任意一个物品。前提背包能装下<code>j-v(i,k) &gt;= 0</code></li><li><code>dp(0, 0) = 0</code>选前0件物品到容量为j的最大价值为0</li></ul><h4 id="DP-自底向上-3"><a href="#DP-自底向上-3" class="headerlink" title="DP - 自底向上"></a>DP - 自底向上</h4><pre><code class="lang-c++">// vector&lt;vector&lt;PII&gt;&gt; group;   group[i][k] 代表第i组的第k个物品的信息for (int i = 1; i &lt;= n; i++) {    for (int j = 0; j &lt;= V; j++) {        dp[i][j] = dp[i-1][j];        for (int k = 0; k &lt; group[i].size(); k++) {            int v = group[i][k].first, w = group[i][k].second;            if (j - v &lt; 0) continue;            dp[i][j] = max(dp[i][j], dp[i-1][j-v] + w);        }    }}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>DP</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>DP常见种类</title>
+    <link href="/2020/03/04/DP%E5%B8%B8%E8%A7%81%E7%A7%8D%E7%B1%BB/"/>
+    <url>/2020/03/04/DP%E5%B8%B8%E8%A7%81%E7%A7%8D%E7%B1%BB/</url>
+    
+    <content type="html"><![CDATA[<h1 id="DP常见种类"><a href="#DP常见种类" class="headerlink" title="DP常见种类"></a>DP常见种类</h1><ul><li>对于dp数组下标什么时候从1开始, 假如状态中有 <code>i-1</code>转移过来的就最好从1开始. 这样可以给dp[0]初值, 设置边界, 少一些判断</li><li>一般解决 <strong>最值, 计数, 存在性</strong></li><li>时间复杂度: 状态数 <em> 转移代价   (定义状态的个数 </em> 每个状态计算的代价)</li></ul><h2 id="术语-amp-满足性质"><a href="#术语-amp-满足性质" class="headerlink" title="术语 &amp; 满足性质"></a>术语 &amp; 满足性质</h2><h3 id="术语"><a href="#术语" class="headerlink" title="术语"></a>术语</h3><ul><li>动态规划：运筹学中的一个分支，是求解决策过程最优化的数学方法。</li><li>阶段：把所给求解问题的过程恰当地分成若干个相互联系的阶段。</li><li>状态：状态表示每个阶段开始面临的自然状况或客观条件。</li><li>决策（转移）：一个阶段的状态给定以后，从该状态演变到下一阶段某个状态的一种选择称为决策。</li><li>策略：每阶段都做一个决策，一系列决策的集合。</li><li>边界：初始集合。</li></ul><h3 id="满足性质"><a href="#满足性质" class="headerlink" title="满足性质"></a>满足性质</h3><ul><li>最优子结构：一个最优化策略的子策略总是最优的，反过来，我们可以通过最优的子策略，推出最优策略。</li><li>无后效性：当我们通过一系列策略到达了某一阶段的某一状态时，下一步决策不受之前的一系列策略影响，仅由当前状态决定。</li><li>子问题重叠：算法计算的过程中会反复地求解相同的一定量的子问题，而不是不断生成没有见过的新问题。也就是说子问题空间不大，或是状态空间不大，我们可以通过存储状态的答案加快计算速度。</li></ul><h3 id="记忆化搜索模板"><a href="#记忆化搜索模板" class="headerlink" title="记忆化搜索模板"></a>记忆化搜索模板</h3><ul><li>wnjxyk大佬讲模板</li></ul><pre><code class="lang-c++">int dp[状态表示];int dfs(状态表示) {    if (决策边界) return 决策边界答案; // 决策边界    if (dp[状态表示] != 无效数值) return dp[状态表示]; // 记忆化    for (当前状态表示的 子状态) dfs(子状态) 更新 dp[状态表示]; // 状态转移    return dp[状态表示];}int solve() {    memset(dp, 无效数值, sizeof(dp));    return dfs(原问题状态);}</code></pre><h2 id="线性DP-（序列型）"><a href="#线性DP-（序列型）" class="headerlink" title="线性DP （序列型）"></a>线性DP （序列型）</h2><ul><li>递推方程有一个明显的线性关系, 背包问题也是线性DP的一种</li><li>线性DP的状态可以想象成一个n维矩阵, 一行一行按着顺序求出结果, 这种DP问题叫做线性DP</li><li>常见问题: 背包问题, 数字三角形(lc120), 最长上升子序列(lc300), 最长公共子序列(lc1143), 编辑距离(lc72)</li></ul><h2 id="区间DP"><a href="#区间DP" class="headerlink" title="区间DP"></a>区间DP</h2><ul><li>状态是用区间表示</li><li>经典问题: 石子合并(ac282)</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>DP</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>最短路</title>
+    <link href="/2020/03/04/%E6%9C%80%E7%9F%AD%E8%B7%AF/"/>
+    <url>/2020/03/04/%E6%9C%80%E7%9F%AD%E8%B7%AF/</url>
+    
+    <content type="html"><![CDATA[<h1 id="最短路"><a href="#最短路" class="headerlink" title="最短路"></a>最短路</h1><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/image-20200127131950787.png" srcset="/img/loading.gif" alt=""></p><h3 id="SPFA"><a href="#SPFA" class="headerlink" title="SPFA"></a>SPFA</h3><pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;using namespace std;int n, m;vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt; g;   // w idint spfa(int u) {    vector&lt;int&gt; dist(n + 1, INT_MAX);    vector&lt;bool&gt; used(n + 1, false);    dist[u] = 0;    queue&lt;int&gt; q;    q.push(u);    used[u] = true;    while (!q.empty()) {        int ver = q.front(); q.pop();        used[ver] = false;        for (auto &amp;e : g[ver]) {            int ne = e.second, w = e.first;            if (dist[ne] &gt; dist[ver] + w) {                dist[ne] = dist[ver] + w;                if (!used[ne]) {                    used[ne] = true;                    q.push(ne);                }            }        }    }    if (dist[n] == INT_MAX) return -1;    return dist[n];}int main() {    scanf(&quot;%d%d&quot;, &amp;n, &amp;m);    g = vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt;(n + 1);    for (int i = 0; i &lt; m; i++) {        int a, b, c;        scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;c);        g[a].push_back({c, b});    }    int ans = spfa(1);    printf(&quot;%d&quot;, ans);    return 0;}</code></pre><h3 id="Dijkstra"><a href="#Dijkstra" class="headerlink" title="Dijkstra"></a>Dijkstra</h3><p>（堆优化版子）<code>T: O(mlogn)  S: O(n + m)</code></p><pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;using namespace std;typedef pair&lt;int, int&gt; PII;int n, m;vector&lt;vector&lt;PII&gt;&gt; g;// 求 u 到 任何一点 的最短路int dijkstra(int u) {    vector&lt;int&gt; dist(n + 1, INT_MAX);    vector&lt;bool&gt; used(n + 1, false);    // vector&lt;int&gt; prev(n + 1, -1);   初试话为-1    priority_queue&lt;PII, vector&lt;PII&gt;, greater&lt;PII&gt;&gt; q;    q.push({0, u});    while (!q.empty()) {        PII t = q.top(); q.pop();        int ver = t.second, dis = t.first;        if (used[ver]) continue;        used[ver] = true;        dist[ver] = dis;        for (auto &amp;e : g[ver]) {            int ne = e.first, w = e.second;            if (dist[ne] &gt; dist[ver] + w) {                dist[ne] = dist[ver] + w;                // prev[ne] = ver;    获取路径                q.push({dist[ne], ne});            }        }    }    // 返回到 u -&gt; n 的最短路    if (dist[n] == INT_MAX) return -1;    return dist[n];}int main() {    scanf(&quot;%d%d&quot;, &amp;n, &amp;m);    g = vector&lt;vector&lt;PII&gt;&gt;(n + 1);  // 下标从1开始    for (int i = 0; i &lt; m; i++) {        int a, b, c;        scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;c);        g[a].push_back({b, c});    }    int ans = dijkstra(1);    printf(&quot;%d&quot;, ans);    return 0;}</code></pre><ul><li>打印路径</li></ul><pre><code class="lang-c++">// 根据prev获取路径vector&lt;int&gt; getPath(int t) {    vector&lt;int&gt; path;    for(; t != -1; t = prev[t])        path.push_back(t);    reverse(path.begin(),path.end());    return path; }</code></pre><h3 id="Floyd"><a href="#Floyd" class="headerlink" title="Floyd"></a>Floyd</h3><p> <code>T: O(n^3)  S: O(1)</code></p><ul><li>邻接矩阵（稠密图）</li><li>允许负权边，不能有负权环</li></ul><p><strong>Note :</strong></p><ol><li>初试化时候对角线是0， 其他都是INF（INF不能是INT_MAX，做加法会越界）</li><li>由于是邻接矩阵存储，重边的情况保留最短的边</li><li>判断是否有路径的时候在边都是正数的情况下可以使用距离是否等于<code>g[a][b] == INF</code>判断，但有负权边则需要使用<code>g[a][b] &gt; INF / 2</code>。原因：当 <code>dist[i][j] = INF</code>,<code>dist[i][k] = INF</code>,<code>dist[k][j] = -10</code>时，那么dist[i][j]就会被更新成INF - 10，但此时i和j仍然是不连通的。</li></ol><pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;using namespace std;const int INF = 0x3f3f3f3f;  // floyd() 中 g[i][k] + g[k][j]可能越界。所以INF为0x3f3f3f3fint n, m;vector&lt;vector&lt;int&gt;&gt; g;// 初始化void init() {    g = vector&lt;vector&lt;int&gt;&gt;(n + 1, vector&lt;int&gt;(n + 1, INF));    for (int i = 1; i &lt;= n; i++) g[i][i] = 0;}// 下标从1开始, 若要0开始就对应改成[0, n)void floyd() {    for (int k = 1; k &lt;= n; k++)        for (int i = 1; i &lt;= n; i++)            for (int j = 1; j &lt;= n; j++)                g[i][j] = min(g[i][j], g[i][k] + g[k][j]);}int main() {    int k;    scanf(&quot;%d%d%d&quot;, &amp;n, &amp;m, &amp;k);    init();    for (int i = 0; i &lt; m; i++) {        int a, b, w;        scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;w);        g[a][b] = min(g[a][b], w);  // 邻接矩阵去重边需要把最小的保留    }    floyd();    for (int i = 0; i &lt; k; i++) {        int a, b;        scanf(&quot;%d%d&quot;, &amp;a, &amp;b);        if (g[a][b] &gt; INF / 2) printf(&quot;impossible\n&quot;);  // 若全是权边 判断 == INF就行        else printf(&quot;%d\n&quot;, g[a][b]);    }    return 0;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>图论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>iOS数据的序列化与存储</title>
+    <link href="/2020/03/04/App%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD_%E6%95%B0%E6%8D%AE%E7%9A%84%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%AD%98%E5%82%A8/"/>
+    <url>/2020/03/04/App%E5%9F%BA%E7%A1%80%E5%8A%9F%E8%83%BD_%E6%95%B0%E6%8D%AE%E7%9A%84%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%AD%98%E5%82%A8/</url>
+    
+    <content type="html"><![CDATA[<h2 id="JSON解析"><a href="#JSON解析" class="headerlink" title="JSON解析"></a>JSON解析</h2><h3 id="NSJSONSerialization"><a href="#NSJSONSerialization" class="headerlink" title="NSJSONSerialization"></a>NSJSONSerialization</h3><p>(系统最底层)</p><ul><li>系统最基础的库： NSJSONSerialization 提供JSON数据和系统对象之间的转换（可以相互转换）</li></ul><pre><code class="lang-objc">// 把收到NSData转成Dictionary的对象NSError *jsonError;// change to NSdata to Dictionaryid jsonObj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&amp;jsonError];</code></pre><h3 id="开源的解析库"><a href="#开源的解析库" class="headerlink" title="开源的解析库"></a>开源的解析库</h3><ul><li><p>用一个Model来代表Dictionary汇总的数据（Bean）</p><p>JSON Model开源项目： <strong>YYModel</strong> / Mantle / MJExtension</p></li><li><p>简化NSData - JSON - Model流程</p></li><li>避免类型转换错误 / 属性和对象不一致</li><li>相互转换</li></ul><p><strong>建议使用开源的项目直接把Dictionary变成一个Model，但是在objectForKey的时候也是需要异常检测的，防止拿不到数据。</strong></p><pre><code class="lang-objc">JSON:{   &quot;uid&quot;:123456   &quot;name&quot;:&quot;Victor&quot;   &quot;create&quot;:&quot;1965-07-31T00:00:00+0000&quot;}// Model:@interface User : NSObject@property UInt64 uid;@property NSString *name;@property NSDate *created;@end@implementation User@end// Convert json to model:User *user = [User yy_modelWithJSON:json];  // json is NSDictionary// Convert model to json:NSDictionary *json = [user yy_modelToJSONObject];</code></pre><h2 id="完整列表加载流程"><a href="#完整列表加载流程" class="headerlink" title="完整列表加载流程"></a>完整列表加载流程</h2><ul><li>在合适的时机通过网络接口加载数据</li><li>使用NSJsonSerialization解析处理网络请求</li><li>数据Model(Bean)化</li><li>列表加载Model数组</li></ul><p><strong>通过Loader请求数据的时候通过一个Block来传回数据，并且会涉及到主进程问题</strong></p><h2 id="iOS文件"><a href="#iOS文件" class="headerlink" title="iOS文件"></a>iOS文件</h2><ul><li><p>每个App是一个沙盒，只能访问自己沙盒之中的文件了</p><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15725910914753.jpg" srcset="/img/loading.gif" alt=""></p></li><li><p>沙盒机制App只能访问自己的目录</p></li><li><p>Documents： 可以进行备份和恢复，体积较大，一般存档用户数据（如音乐App 音乐存在这里） 语义上用户生产和共享的文件</p></li><li><p>Library：最常用，可以自定义子文件夹，会被同步到icloud中</p><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15725913707522.jpg" srcset="/img/loading.gif" alt=""></p></li><li><p>SystemData：系统提供的数据</p></li><li><p>tmp: 临时文件夹，启动时候可能会被清空</p></li><li><p>Documents和Library最大的区别可以共享文件，设置plist就可以共享。默认是不支持共享的。</p></li><li>Library为最常用文件夹，可以用户自定义文件夹，如在网络的时候可以吧网络数据都存在这里，命名通常是这个网络资源的倒叙。 （系统默认有Cache文件夹和Preference，可以再对应Cache文件夹中继续在建立文件夹存一些用户的缓存）</li></ul><h3 id="NSPathUtilites"><a href="#NSPathUtilites" class="headerlink" title="NSPathUtilites"></a>NSPathUtilites</h3><p>获取沙盒地址</p><p><code>NSArray *pathArray = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);</code>  取出文件地址 返回的是一个数组，第一个数为地址</p><ul><li>第一个参数是哪个文件夹(Document或Library或其子文件夹等等)</li><li>第二个参数是指取用户的文件夹还是系统的文件夹</li></ul><p>以下拿到沙盒地址</p><pre><code class="lang-objc">NSArray *pathArray = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);NSString *cachePath = [pathArray firstObject];</code></pre><h3 id="NSFileManager"><a href="#NSFileManager" class="headerlink" title="NSFileManager"></a>NSFileManager</h3><p>通过NSFileManager来对文件夹及文件操作</p><ul><li><strong>fileManager是一个单例</strong>。 主要用于创建文件、删除文件、查询文件、移动和复制等等。根据用户给出的路径操作</li><li>创建文件，删除文件，查询文件，移动和复制文件等</li><li>读取文件内容</li><li>通过NSURL或者NSString作为Path进行操作</li></ul><p><code>NSFileManagerDelegate</code> 提供移动、复制、删除等操作的具体定义实现</p><pre><code class="lang-objc">// fileManager是一个单例。 用于创建文件、删除文件、查询文件、移动和复制等等。根据用户给出的路径操作NSFileManager *fileManager = [NSFileManager defaultManager];// 创建文件夹NSString *dataPath = [cachePath stringByAppendingPathComponent:@&quot;YXData&quot;];  // 在cachePath地址的后面追加这个地址NSError *createError;[fileManager createDirectoryAtPath:dataPath withIntermediateDirectories:YES attributes:nil error:&amp;createError];  // 创建一个文件夹根据dataPath// 创建文件NSString *listDataPath = [dataPath stringByAppendingPathComponent:@&quot;list&quot;];NSData *listData = [@&quot;abc&quot; dataUsingEncoding:NSUTF8StringEncoding];      // 使用utf8编码字符串，变成一个二进制文件。计算机是以二进制存储的[fileManager createFileAtPath:listDataPath contents:listData attributes:nil];      // 在给定路径创建文件，内容contents为listData(字符abc)// 查询文件BOOL fileExist = [fileManager fileExistsAtPath:listDataPath];  // 判断listDataPath是否z存在// 删除if (fileExist) {    [fileManager removeItemAtPath:listDataPath error:nil];}</code></pre><h3 id="NSFileHandle"><a href="#NSFileHandle" class="headerlink" title="NSFileHandle"></a>NSFileHandle</h3><p>对指定文件读写</p><ul><li><strong>NSFileHandle是单例</strong> 。 读/写文件</li><li>常用于追加操作 （在offset移动到文件莫问，然后追下字符）</li><li>记得操作完关闭文件</li></ul><p>为文件追加字符串在最后</p><pre><code class="lang-objc">// 单例。 读/写/截断/刷新/追加数据等等。常用于追加数据。 以下对listDataPath的这个文件创造了一个NSFileHandle对其进行操作NSFileHandle *fileHandler = [NSFileHandle fileHandleForUpdatingAtPath:listDataPath];// 对文件数据追加操作[fileHandler seekToEndOfFile];  // 把offset调到文件末尾，因为要在文件末尾追加数据[fileHandler writeData:[@&quot;--append: def&quot; dataUsingEncoding:NSUTF8StringEncoding]];  // 使用utf8编码字符串写在offset后面[fileHandler synchronizeFile];  // 刷新文件 对实时要求高就刷新[fileHandler closeFile];  // 关闭文件操作。不关系统结束才关，但是最好每次使用完就关</code></pre><h2 id="序列化和反序列化对象"><a href="#序列化和反序列化对象" class="headerlink" title="序列化和反序列化对象"></a>序列化和反序列化对象</h2><h3 id="NSCoder"><a href="#NSCoder" class="headerlink" title="NSCoder"></a>NSCoder</h3><ul><li>基类，用户不会直接使用这个类。系统在之上对其封装了</li><li>提供简单的函数，在Object和二进制数据间进行转换</li><li>在序列化和反序列化的，为了向前向后兼容，不依赖顺序，所以需要将非基本数据对应到key存储(PBCoding)。 就是在序列化的时候需要自定义一个Key做为键，一般方便使用属性的名称做为Key或者自定义Key</li></ul><h3 id="NSKeyedArchiver-amp-NSKeyedUnarchiver"><a href="#NSKeyedArchiver-amp-NSKeyedUnarchiver" class="headerlink" title="NSKeyedArchiver &amp; NSKeyedUnarchiver"></a>NSKeyedArchiver &amp; NSKeyedUnarchiver</h3><ul><li>NSCoder的子类。 使用比较多</li><li>提供简单的函数，在Object和二进制数据间进行转换 (Object序列化成二进制流， 二进制流反序列化成Object)</li><li>需要Object自己处理Key - Value对应关系</li><li>提供基本的Delegate给用户进行使用 </li><li>序列化(NSKeyedArchiver中的方法)：<code>archivedDataWithRootObject:requiringSecureCoding:error:</code></li><li>反序列化(NSKeyedUnarchiver中的方法)：<code>unarchivedObjectOfClasses:fromData:error:</code></li></ul><h3 id="NSCoding协议-amp-NSSecureCoding协议-安全"><a href="#NSCoding协议-amp-NSSecureCoding协议-安全" class="headerlink" title="NSCoding协议 &amp; NSSecureCoding协议(安全)"></a>NSCoding协议 &amp; NSSecureCoding协议(安全)</h3><ul><li>需要序列化一个对象，给对象需要实现该协议</li><li>NSArray &amp; NSDictionary等类型系统已经实现该协议</li><li>NSSecureCoding在最新系统需要使用，更加安全。（解决文件替换攻击，序列化时规定Class）</li></ul><h3 id="NSUserDefault"><a href="#NSUserDefault" class="headerlink" title="NSUserDefault"></a>NSUserDefault</h3><ul><li>提供简单的key - value存储</li><li><strong>单例</strong> <code>[NSUserDefaults standardUserDefaults]</code>，存取轻量级的数据(一般用于用户的偏好设置) </li><li>升级安装后还可以继续使用(因为保存在本地文件夹中，所以App升级后也是可以看到的)</li><li>文件存储在 /Library/Preferences下</li><li>支持基本数据类型，但是复杂的Model需要转成NSData之后存储。 Integer Float Double Bool NSArray NSData NSString NSDictionary等</li><li>存方法<code>setObject:forKey:</code>. 取方法<code>dataForKey:</code></li></ul><pre><code class="lang-objc">[[NSUserDefaults standardUserDefaults] setObject:listData forKey:@&quot;listData&quot;];  // 通过key存 (listData是一个二进制流)    NSData *test = [[NSUserDefaults standardUserDefaults] dataForKey:@&quot;listData&quot;];  // 通过key取</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+      <category>存储</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>iOS网络功能基础总结</title>
+    <link href="/2020/03/03/%E7%BD%91%E7%BB%9C%E5%8A%9F%E8%83%BD/"/>
+    <url>/2020/03/03/%E7%BD%91%E7%BB%9C%E5%8A%9F%E8%83%BD/</url>
+    
+    <content type="html"><![CDATA[<h2 id="App内基本网络流程"><a href="#App内基本网络流程" class="headerlink" title="App内基本网络流程"></a>App内基本网络流程</h2><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722452288953.jpg" srcset="/img/loading.gif" alt=""></p><ul><li>NSURL : 封装网络字符串地址</li><li>NSURLRequest : 在NSURL的基础上封装一些参数和基础的设置，形成一个请求</li><li>NSURLSession : NSURLRequest根据NSURLSession提供的一些方法就可以返回服务器的资源数据</li></ul><h2 id="URL-amp-NSURL"><a href="#URL-amp-NSURL" class="headerlink" title="URL &amp; NSURL"></a>URL &amp; NSURL</h2><p><code>[协议类型]://[服务器器地址]:[端⼝口号]/[资源层级UNIX⽂文件路路径][⽂文件名]?[查询]#[⽚片段ID]</code><br>对应：<br><code>http://root:Password1@example.com*:8042/project/index.dtb?type=animal&amp;name=dog#nose</code></p><ul><li>封装成URL通过正则表达式来匹配对应的参数， 封装成规范化的对象</li><li>http网络 / file本地路径</li></ul><h2 id="HTTP-amp-NSURLRequest"><a href="#HTTP-amp-NSURLRequest" class="headerlink" title="HTTP &amp; NSURLRequest"></a>HTTP &amp; NSURLRequest</h2><ul><li>Get方法：从指定的资源请求数据。 <code>可缓存、长度限制</code></li><li>Post方法：向指定的资源提交要被处理的数据。 <code>不缓存、长度无要求</code></li><li><p>Http Header：请求和相应的补充信息。 <code>长度、编码类型、压缩方式、事件</code></p></li><li><p>把NSURL结合请求的各项需求打包起来作为一个请求</p></li></ul><h2 id="NSURLSession"><a href="#NSURLSession" class="headerlink" title="NSURLSession"></a>NSURLSession</h2><ul><li><p>跟WebView类似。传入一个NSURLRequest，将请求获取</p></li><li><p>将NSURLRequest封装成一个Task，在NSURLSession中进行网络请求。</p></li><li><p>可以知道Task的后台状态等等</p></li><li><p>一个Session可以创建多个请求。 类比浏览器打开多个网页。</p></li><li><p>可以设置多个NSURLSession。所以对于<strong>普通模式</strong>和<strong>无痕模式</strong>来说，就是两个不同的NSURLSession，只是他们的请求策略不同。（对Cookie保不保存等等）。</p></li></ul><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722487141865.jpg" srcset="/img/loading.gif" alt=""></p><h3 id="NSURLSession组织结构"><a href="#NSURLSession组织结构" class="headerlink" title="NSURLSession组织结构"></a>NSURLSession组织结构</h3><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722490896538.jpg" srcset="/img/loading.gif" alt=""></p><ul><li><p>一般情况使用单例shareSession。都是默认参数</p><pre><code class="lang-objc">@property (class, readonly, strong) NSURLSession *sharedSession;+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration                                   delegate:(nullable id &lt;NSURLSessionDelegate&gt;)delegate                              delegateQueue:(nullable NSOperationQueue *)queue;</code></pre><p>配置会话USURLSessionConfiguration:</p><ul><li>timeout时间</li><li>cookie缓存策略</li><li>最大并发数、是否支持蜂窝数据</li><li>其他网络行为的行为和策略</li><li>根据Configuration的不同，提供默认、后台、以及自定义</li></ul></li></ul><ul><li>一般使用dataTask 接收JSON<br><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722492712046.jpg" srcset="/img/loading.gif" alt=""></li></ul><h4 id="NSURLSessionTask"><a href="#NSURLSessionTask" class="headerlink" title="NSURLSessionTask"></a>NSURLSessionTask</h4><p>state</p><ul><li>resume 开始</li><li>suspend 挂起</li><li>cancel 取消</li></ul><p>通过Handler block来处理回调,回去完成后处理完成的逻辑</p><pre><code class="lang-objc">NSURLSessionDataTask *dataTask = [session dataTaskWithURL:listURL completionHandler:^(NSData *_Nullable data, NSURLResponse *_Nullable response, NSError *_Nullable error) {        NSLog(@&quot;&quot;);    }];[dataTask resume];</code></pre><p>流程：</p><ol><li>创建 &amp; 使用默认的Session</li><li>通过地址NSURL和参数创建Task</li><li>开始 &amp; 取消 Task</li><li>在Handler中处理数据</li></ol><p>handle中获取回调<br><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722521196919.jpg" srcset="/img/loading.gif" alt=""></p><h2 id="使用http"><a href="#使用http" class="headerlink" title="使用http"></a>使用http</h2><p>(默认要求都是⽤HTTPS进⾏请求)</p><p>在Info.plist中加入该属性<br><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722504297776.jpg" srcset="/img/loading.gif" alt=""></p><h2 id="AFNetworking集成"><a href="#AFNetworking集成" class="headerlink" title="AFNetworking集成"></a>AFNetworking集成</h2><ol><li><p>在<a href="https://cocoapods.org/" target="_blank" rel="noopener">官网</a>查看CocoaPods安装</p></li><li><p>在项目最上层目录下 <code>pod init</code> 会自动生成Podfile文件</p></li><li><p>填写 相对应的库 不指定版本默认最新版本</p><pre><code class="lang-ruby">target &#39;NewsApp&#39; do    pod &#39;AFNetworking&#39;end</code></pre></li><li><p>然后在终端执行命令 <code>pod install</code></p></li></ol><p><em>PS: 可使用AFNetWorking，要打开 <code>.xcworkspace</code> 而不是打开原来的 <code>.xcodeproj</code></em></p><p><em><code>.xcworkspace</code>是一个集成项目，几个项目合成一个workspace, 一个workspace中有多个小项目。</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>App界面 - WebKit</title>
+    <link href="/2020/03/03/App%E7%95%8C%E9%9D%A2_WebKit/"/>
+    <url>/2020/03/03/App%E7%95%8C%E9%9D%A2_WebKit/</url>
+    
+    <content type="html"><![CDATA[<h1 id="App界面-WebKit"><a href="#App界面-WebKit" class="headerlink" title="App界面 - WebKit"></a>App界面 - WebKit</h1><p>一句话作用：把网页url加载到手机上。</p><h2 id="Web基础"><a href="#Web基础" class="headerlink" title="Web基础"></a>Web基础</h2><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15655779413945.jpg" srcset="/img/loading.gif" alt=""></p><h3 id="UIWebView"><a href="#UIWebView" class="headerlink" title="UIWebView"></a>UIWebView</h3><p>iOS12后弃用。<br>内存系统泄漏，稳定差，WebCore和JSCore Crash较多，对HTML5和CSS3支持较少。</p><h3 id="WebKit"><a href="#WebKit" class="headerlink" title="WebKit"></a>WebKit</h3><ul><li><p>独立进程，内存。 Crash不影响主App，更多更友好的HTML和CSS支持，采用JIT技术</p></li><li><p>是一个开源的Web浏览器引擎</p></li><li>iOS中的WebKit.framework就是在WebCore、底层桥接、JSCore引擎等核心模块的基础上，针对iOS平台的项目封装。</li></ul><h3 id="WKWebView"><a href="#WKWebView" class="headerlink" title="WKWebView"></a>WKWebView</h3><pre><code class="lang-objc">// 在view中添加一个webView[self.view addSubview:({    self.webView = [[WKWebView alloc] initWithFrame:CGRectMake(...)];    self.webview;})];// webView加载网页[self.webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@&quot;https://happy-yuxuan.github.io&quot;]]];</code></pre><p>使用流程：</p><ol><li>创建WKWebView</li><li>设置Delegate以及样式、JS注入等</li><li>加载URL或HTML字符串</li><li>在相应的回调中处理业务逻辑</li></ol><h2 id="常用代理方法"><a href="#常用代理方法" class="headerlink" title="常用代理方法"></a>常用代理方法</h2><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15717295162779.jpg" srcset="/img/loading.gif" alt=""></p><p>WKNavigationDelegate**  代理方法，如加载的进度等信息</p><ul><li><code>decidePolicyForNavigationAction</code> 是否加载请求</li><li><code>didFinishNavigation</code> 完成加载</li><li><code>didFailNavigation</code> 失败加载</li><li><code>webViewWebContentProcessDidTerminate</code> webView Crash回调</li></ul><h3 id="作为观察者被监听-（KVO）"><a href="#作为观察者被监听-（KVO）" class="headerlink" title="作为观察者被监听 （KVO）"></a>作为观察者被监听 （KVO）</h3><pre><code class="lang-objc">/* 注册监听- self作为监听者，接受事件- 监听 self.webview 的 estimatedProgress 属性- 在NSKeyValueObservingOptionNew的时候发通知*/[self.webview addObserver:self               forKeyPath:@&quot;estimatedProgress&quot;                  options:NSKeyValueObservingOptionNew                  context:nil];// 移除监听[self.webview removeObserver:self forKeyPath:@&quot;estimatedProgress&quot;];/* 接受通知- change 对应着上面的options*/- （void)observerValueForKeyPath:(nullable NSString *)keyPath                        ofObject:(nullable id)object        change:(nullable NSDictionary&lt;NSKeyValueChangeKey, id&gt; *)change                         context:(nullable void *)context {    // 业务逻辑}</code></pre><p>见代码： (设置对网络请求WebView的属性estimatedProgress的监听)</p><ol><li><code>self.webview</code> 添加一个观察这self去监听自己的”estimatedProgress”属性的变化。 <code>option</code>是变化什么时候发送通知</li><li>接收通知：观察者<code>self</code>需要实现对应接收通知的的方法。</li><li>移除通知：在观察者被销毁的时候需要移除监听！</li></ol><h2 id="iOS中的Web应用"><a href="#iOS中的Web应用" class="headerlink" title="iOS中的Web应用"></a>iOS中的Web应用</h2><ul><li>JavaScriptCore 是 JavaScript和Native通信</li><li>跨平台 &amp; 热修复</li><li>业务逻辑 (JS open Api) (模板引擎)</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+      <category>WebKit</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>App界面 - 动画</title>
+    <link href="/2020/03/03/App%E7%95%8C%E9%9D%A2_%E5%8A%A8%E7%94%BB/"/>
+    <url>/2020/03/03/App%E7%95%8C%E9%9D%A2_%E5%8A%A8%E7%94%BB/</url>
+    
+    <content type="html"><![CDATA[<h1 id="App界面-动画"><a href="#App界面-动画" class="headerlink" title="App界面 - 动画"></a>App界面 - 动画</h1><p>CoreAnimation - (UIView动画) （UIKit组件自带动画）</p><ul><li>UIView动画： 渐隐渐显 位置移动</li><li>UIKit组件自带动画 ：1. UITableViewCell 添加删除 2. UIViewController 切换</li></ul><h2 id="UIView动画"><a href="#UIView动画" class="headerlink" title="UIView动画"></a>UIView动画</h2><p>只要继承自UIView都可以有的动画</p><ul><li><p>解决日常开发80%以上的动画效果，处理基本的Frame、 Alpha、 Transform，</p><p>但不能自定义中间过程，相当于原子操作动画。</p><p><strong>实现步骤：1. 设置动画参数（时间、效果）2.动画终止时属性的最终值</strong></p><pre><code class="lang-objc">+ (void)animateWithDuration:(NSTimeInterval)duration /* 动画时间 */                      delay:(NSTimeInterval)delay /* 动画延迟 */     usingSpringWithDamping:(CGFloat)dampingRatio /* 阻尼系数 */      initialSpringVelocity:(CGFloat)velocity /* 回弹系数 */                    options:(UIViewAnimationOptions)options /* 效果 */               animations:^{                        // 添加动画最终样式               } completion:^(BOOL finished) {                        // 动画结束之后逻辑               }</code></pre><ul><li><p>最常用的options的选择动画效果(摘自<code>UIViewAnimationOptions</code>)</p><pre><code class="lang-objc">UIViewAnimationOptionCurveEaseInOut = 0 &lt;&lt; 16, // defaultUIViewAnimationOptionCurveEaseIn = 1 &lt;&lt; 16,UIViewAnimationOptionCurveEaseOut = 2 &lt;&lt; 16,UIViewAnimationOptionCurveLinear = 3 &lt;&lt; 16,</code></pre></li></ul></li><li><p>给定UIView的一个终止位置，跟根据起始位置进行动画的自动展示，示例代码</p><pre><code class="lang-objc">/* iOS13废弃了.keyWindow属性 解决办法：https://stackoverflow.com/questions/57134259/how-to-resolve-keywindow-was-deprecated-in-ios-13-0需要先把keyWindows添加自身的View， 在销毁的时候再移除 [self removeFromSuperview]*/// [[UIApplication sharedApplication].keyWindow addSubview:self];  [UIView animateWithDuration:1.f delay:0.f usingSpringWithDamping:0.5 initialSpringVelocity:0.5 options:UIViewAnimationOptionCurveEaseInOut animations:^{        self.deleteButton.frame = CGRectMake((self.bounds.size.width - 200) / 2, (self.bounds.size.height - 200) / 2, 200, 200);    } completion:^(BOOL finished) {        NSLog(@&quot;&quot;);  // finish animation and do something    }];</code></pre></li></ul><h3 id="步骤操作说明"><a href="#步骤操作说明" class="headerlink" title="步骤操作说明"></a>步骤操作说明</h3><p> (这也是Delegate的通用实现步骤)</p><p>顺便复习一下Delegate模式，自定义实现一个代理方法<br><em>PS：UITableView简称TV, UITableViewCell简称TVCell， UIButton简称Bt</em></p><p>需要完成任务：在TV点击TVCell中的删除Bt， TV获取对应TVCell的对象以及VTCell中的属性BT</p><h4 id="在TVCell声明Delegate"><a href="#在TVCell声明Delegate" class="headerlink" title="在TVCell声明Delegate"></a>在TVCell声明Delegate</h4><ol><li><p>在TVCell的.h文件中声名一个Delegate。并向外暴露一个属性名字为delegate。 并定义好函数，函数为点击删除按钮的操作<code>tableViewCell:clickDeleteButton:</code></p><pre><code class="lang-objc">  // YXNormalTableViewCell.h  // 自己实现是一个Delegate，当点击删除按钮的时候去触发这个Delegate  @protocol YXNormalTableViewCellDelegate &lt;NSObject&gt;  // 告诉Delegate给的是哪个cell和哪个button  - (void)tableViewCell:(UITableViewCell *)tableViewCell clickDeleteButton:(UIButton *)deleteButton;    @end  @interface YXNormalTableViewCell : UITableViewCell  // 这里是weak类型！！！  @property (nonatomic, weak, readwrite) id&lt;YXNormalTableViewCellDelegate&gt; delegate;    // ...  @end</code></pre></li><li><p>在TVCell的.m文件中设置删除Bt(deleteButton)的点击事件Target-Action @selector(deleteButtonClick)，去触发这个Delegate，并把当前的TVCell和Bt传给实现者</p><pre><code class="lang-objc">  // YXNormalTableViewCell.m  - (void)deleteButtonClick {      // 因为这里这里的Delegate是可选的，所以要看看delegate是否实现了对应的方法      if (self.delegate &amp;&amp; [self.delegate respondsToSelector:@selector(tableViewCell:clickDeleteButton:)]) {          [self.delegate tableViewCell:self clickDeleteButton:self.deleteButton];  // pass TVCell and Bt as parameters to the delegate object       }  }</code></pre></li></ol><h4 id="在TV中的实现Delegate"><a href="#在TV中的实现Delegate" class="headerlink" title="在TV中的实现Delegate"></a>在TV中的实现Delegate</h4><ol><li><p>在.m文件的开头声名要实现的这个Delegate。并生成每一个TVCell的时候，都把每一个Cell的delegate属性设置成self，即当前处理的ViewController</p><pre><code class="lang-objc"> // ViewController.m // 声名这个 YXNormalTableViewCellDelegate @interface ViewController ()&lt;YXNormalTableViewCellDelegate, UITableViewDataSource, UITableViewDelegate&gt;  // ... @end // ... - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {     YXNormalTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@&quot;id&quot;];  // 使用复用回收机制，在tableview的回收池中能不能找到这个相同id的cell（相同id的样式是一样的）     if (!cell) {  // 若没有cell,创建一个新的cell。         cell = [[YXNormalTableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@&quot;id&quot;];         cell.delegate = self;  // !!!! 把Delegate给当前处理的ViewController,即self !!!!     }     [cell layoutTableViewCell];     return cell; }</code></pre></li><li><p>实现这个代理方法，获取到该点点击的TVCell和Bt的信息，执行删除逻辑</p><pre><code class="lang-objc"> // MARK: - 实现自定义的YXNormalTableViewCellDelegate - (void)tableViewCell:(UITableViewCell *)tableViewCell clickDeleteButton:(UIButton *)deleteButton {     NSLog(@&quot;代理方法 - 点击了删除按钮,并获得对应的tableViewCell和deleteButton&quot;);     // ... 删除逻辑 }</code></pre><p> <a href="ttps://www.jianshu.com/p/b351a759cdcc">有点像这篇文章的传值操作，还有更多用法，参考文章</a></p></li></ol><h3 id="Block来回调点击Cell之后更新UITableView的操作"><a href="#Block来回调点击Cell之后更新UITableView的操作" class="headerlink" title="Block来回调点击Cell之后更新UITableView的操作"></a>Block来回调点击Cell之后更新UITableView的操作</h3><p>通过函数，传入一个Block可以为声名这个Block的地方保存住这个代码块（截断），之后可以在内部执行这个代码块。 但是要注意循环引用。 （简单理解就是 传值 函数调用，但不准确）</p><ul><li>删除TableView的细节，因为在TableView的一个Delegate方法<code>tableView:numberOfRowsInSection:</code>中要返回TableView的个数，这样在删除的时候使用方法<code>deleteRowsAtIndexPaths:indexPathForCell:withRowAnimation</code>删除后需要将Delegate的个数减一，所以用一个数组来记录元素的个数，而元素是什么不重要，只要是长度。</li></ul><h2 id="CALayer"><a href="#CALayer" class="headerlink" title="CALayer"></a>CALayer</h2><ul><li>每一个UIView的CALayer （一个delegate）负责内容的绘制和动画， 可以理解成是属性</li><li>使用UIView的CALayer实现圆角 <code>@property(nonatomic,readonly,strong) CALayer *layer;</code></li></ul><pre><code class="lang-objc">// setting layerself.deleteButton.layer.cornerRadius = 10;self.deleteButton.layer.masksToBounds = YES;self.deleteButton.layer.borderColor = [UIColor lightGrayColor].CGColor;self.deleteButton.layer.borderWidth = 2;</code></pre><h2 id="CoreAnimation-CALayer的CA的全称"><a href="#CoreAnimation-CALayer的CA的全称" class="headerlink" title="CoreAnimation (CALayer的CA的全称)"></a>CoreAnimation (CALayer的CA的全称)</h2><ul><li><p>关系：layer的底层， 系统提供给用户自定义动画的方法，做完加到CALayer上显示动画。 （可以自定义中间过渡动画）</p></li><li><p>关系： UIView有一个layer， 系统默认实现一套</p></li></ul><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15722316014136.jpg" srcset="/img/loading.gif" alt=""></p><p>动画实现：（开源项目）</p><ul><li>Lottie （通过JSON实现动画，从后台发JSON，在客户端播放JSON就可以播放动画了）</li><li>facebook / pop</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+      <category>动画</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>App界面 - 常用UIKit组件</title>
+    <link href="/2020/03/03/App%E7%95%8C%E9%9D%A2_%E5%B8%B8%E7%94%A8UIKit%E7%BB%84%E4%BB%B6/"/>
+    <url>/2020/03/03/App%E7%95%8C%E9%9D%A2_%E5%B8%B8%E7%94%A8UIKit%E7%BB%84%E4%BB%B6/</url>
+    
+    <content type="html"><![CDATA[<h1 id="App界面-常用UIKit组件"><a href="#App界面-常用UIKit组件" class="headerlink" title="App界面 - 常用UIKit组件"></a>App界面 - 常用UIKit组件</h1><h2 id="设计模式"><a href="#设计模式" class="headerlink" title="设计模式"></a>设计模式</h2><h3 id="MVC（开发者使用数据Model驱动）"><a href="#MVC（开发者使用数据Model驱动）" class="headerlink" title="MVC（开发者使用数据Model驱动）"></a>MVC（开发者使用数据Model驱动）</h3><ul><li>界面View （展示） —- UIView</li><li>数据为 —- Model</li><li>Controller管理数据(Model)如何在视图（View）上展示 —- UIViewController</li></ul><h3 id="Delegate-相互"><a href="#Delegate-相互" class="headerlink" title="Delegate(相互)"></a>Delegate(相互)</h3><ul><li>对类的设计者：在类的流程中暴露出一些方法，可以放用户自定义在这个时候的操作。自定义在这个逻辑。暴露一个delegate的对象给用户，让使用者使用delegate对象实现操作。</li><li>设置self为delegate的接受者，然后根据需求实现delegate的方法。required必须实现。</li></ul><div class="table-container"><table><thead><tr><th style="text-align:center">设计者</th><th style="text-align:center">使用者</th></tr></thead><tbody><tr><td style="text-align:center">提供一些使用者可以自定义的操作<br /><code>@optional/@required</code>注解<br />提供 <code>@property - delegate</code><br />在对应的时机，让delegate执行对应的方法</td><td style="text-align:center">设置 <code>delegate = self</code><br />按需实现方法</td></tr></tbody></table></div><h3 id="观察者模式"><a href="#观察者模式" class="headerlink" title="观察者模式"></a>观察者模式</h3><ul><li><p>定义一种多对多的关系，可以让多个观察者同时监听某一个对象或者对象的属性的变化。</p></li><li><p>在被监听的对象在状态变化时候，会通知所有的观察者。</p></li><li><p>跟代理delegate模式的区别： Delegate只能给一个VC（说白了是1对1， 然后在1对多），VC存在一个该对象。</p></li><li><p>广播， KVO都是观察者模式的实现</p><ul><li><p>KVO</p><pre><code class="lang-objc">/*  注册监听：self 作为监听者，接受事件监听self.webview的estimatedProgress属性在NSKeyValueObservingOptionNew的时候发通知 */[self.webview addObserver:self               forKeyPath:@&quot;estimatedProgress&quot;                   option:NSKeyValueObservingOptionNew                  context:nil];// 移除监听[self.webview removeObserver:self forKeyPath:@&quot;estimatedProgress&quot;];/* 接受通知change 对应着上面的option*/-（void)observeValueForKeyPath:(nullable NSString *)keyPath     ofObject:(nullable id)object      change:(nullable NSDictionary&lt;NSKeyValueChangeKey, id&gt; *)change     context:(nullable void *)context {    // 业务逻辑}</code></pre><ul><li>注册监听：<code>self.webview</code> 添加一个观察这self去监听自己的”estimatedProgress”属性的变化。 <code>option</code>是变化什么时候发送通知</li><li>接收通知：观察者<code>self</code>需要实现对应接收通知的的方法。</li><li>移除通知：在观察这被销毁的时候需要移除监听！！！</li></ul></li></ul></li></ul><h3 id="Target-Action（交互）"><a href="#Target-Action（交互）" class="headerlink" title="Target-Action（交互）"></a>Target-Action（交互）</h3><ul><li>限制传值不灵活</li><li>让一个<strong>对象</strong>监听一个事件<strong>Events</strong> 让target执行action</li></ul><pre><code class="lang-objc">[self.button addTarget:self                action:@selector(clickButton:)      forControlEvents:UIControlEventTouchUpInside];// UIControlEventTouchUpInside是button组件内部监听事件</code></pre><h2 id="UIView"><a href="#UIView" class="headerlink" title="UIView"></a>UIView</h2><ul><li><p>最基础的类，管理渲染屏幕区域的内容展示</p></li><li><p>作为各种View类型的父类，有基础属性(frame)和能力（addSubView etc.）</p></li><li><p>属性<strong>bounds表示相对于自己坐标系的位置和大小(rect)，frame表示相对于父坐标系的位置和大小</strong></p></li><li><p>使用栈管理全部子View，栈顶的先显示。addSubView就是压一个View到SubViews Stack中</p></li><li><p><strong>生命周期</strong> 一个View作为SubView添加到另一个View的时候会经历创建周期方法：</p><p><code>init</code>方法 </p><p>→ <code>willMoveToSuperview:</code>方法 </p><p>→ <code>didMoveToSuperview</code>方法 </p><p>→ <code>willMoveToWindow:</code>方法 </p><p>→ <code>didMoveToWindow</code>方法</p></li></ul><h2 id="UIViewController"><a href="#UIViewController" class="headerlink" title="UIViewController"></a>UIViewController</h2><ul><li><p>创建的时候会默认给一个UIViewController Default View(给一个自身默认的view)</p></li><li><p>是一个包含多个View的容器</p></li><li><p>管理每一个View视图的声名周期，相应用户操作</p></li><li><p>作为一个整体切换，即Controller中所有的View都会是一个整体被切换</p></li><li><p>也可以管理多个Controller切换和动画</p></li><li><p><strong>生命周期</strong> 流程：</p><p> <code>init</code>(创建Controller) </p><p>→ <code>viewDidLoad</code>(里面所有的View在内存加载完毕，还没显示，所以很多初试化在此操作) </p><p>→ <code>viewWillAppear:</code>(开始加载到屏幕的瞬间，每次显现到该VC时) </p><p>→ <code>viewDidAppear:</code>（加载完成的瞬间） </p><p>→ <code>viewWillDisappear:</code>（即将离开屏幕的瞬间） </p><p>→ <code>viewDidDisappear:</code>（完全离开屏幕的瞬间） </p><p>→ <code>Dealloc</code>（销毁的时候）</p></li></ul><h3 id="UITabBarController"><a href="#UITabBarController" class="headerlink" title="UITabBarController"></a>UITabBarController</h3><ul><li>组成ViewControlers（对应很多个VC），还有一个TabBar（控制选择哪一个VC）</li><li>继承自UIViewController</li><li>默认是没有视图的（Default View）要自己设置</li><li>管理多个UIViewController切换。通过底部对应的UITabBar按钮，选中对应的UIViewController。</li><li>实例方法： <code>setViewControllers:@[c1, c2, c3, c4];</code>可以添加不同的Controller（顺序为跟显示一样）。对每一个c，以c1为例设置对应的属性<code>c1.tarBarItem.title</code> <code>c1.tarBarItem.image</code> <code>c1.tarBarItem.selectedImage</code></li></ul><h3 id="UINavigationController"><a href="#UINavigationController" class="headerlink" title="UINavigationController"></a>UINavigationController</h3><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15652452700065.jpg" srcset="/img/loading.gif" alt=""></p><ul><li>继承 UIViewController</li><li>可以Push和Pop ViewController</li><li>只显示栈顶元素 （跟UIView加进UIViewController中一样）</li><li>UINavigationBar <code>title</code> <code>backBarButtonItem</code> <code>backIndicatorImage</code> <code>leftBarButtonItem</code>在包含在NavigationBar里面的Controller的属性自己设置，跟UITabBarController一样在设置，属性在保管的Controller自己里。</li><li>默认没有视图，要自己设置rootViewController<strong>（必须）</strong>。跟UITabBarController一样 <code>UINavigationController *navigationController = [UINavigationController alloc] initWithRootViewController:(根Controller);</code></li><li>在其中的根Controller或者其他Controller中push另一个界面push一个新界面进来，实例方法名为<strong>pushViewController</strong>（navigationController在AppDelegate中）<code>[self.navigationController pushViewController:（新界面Controller） animated:YES];</code></li></ul><h2 id="UIWindow"><a href="#UIWindow" class="headerlink" title="UIWindow"></a>UIWindow</h2><ul><li><p>窗口，最基础的容器，是一个特殊形式的UIView。  最底层的View</p></li><li><p><strong>一般</strong>只有一个UIWindow最上层，主窗口。</p></li><li><p>结合ViewController一起协同工作.</p></li><li><p>使用storyborad会自动创建一个UIWindow（若要删除则需要）</p></li><li><p>删除默认storyboard方法：1.右键删除 2.在plist中把Main storyboard file base name设置也删除.</p></li><li><p>手动创建：三步：<code>创建UIWindow</code> <code>设置rootViewController</code> <code>makeKeyAndVisible</code> </p></li><li><p>手动创建具体：①在AppDelegate（iOS13后为SceneDelegate）中 <code>application:didFinishLauchingWithOptions:</code>创建。 ②添加如下三步代码<code>self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen] bounds]; // 创建UIWindow并把它变成屏幕大小</code> <code>self.window.rootViewController = (想要设置的根viewController)</code> <code>[self.window makeKeyAndVisible]; // 展示UIWindow</code></p></li><li><p>UIWindow两种常用的UI框架： </p><ol><li><p>苹果官方推荐：UIWindow的rootViewController是<strong>TabBarController</strong>，然后TabBarController中依次放NavigationController。（动画效果是收敛在<strong>TabBarController</strong>当中的） </p><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653206448193.jpg" srcset="/img/loading.gif" alt=""></p></li><li><p>UIWindow的rootViewController放的是<strong>NavigationController</strong>，然后NavigationController的root是一个TabBarController。（整个TabBarController作为一个整体被推推走了）。</p><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653206655651.jpg" srcset="/img/loading.gif" alt=""></p></li></ol></li></ul><blockquote><p>iOS13之后，Appdelegate的指责发生了变化，具体的可以参考<a href="https://developer.apple.com/videos/play/wwdc2019/42" target="_blank" rel="noopener">https://developer.apple.com/videos/play/wwdc2019/42</a> 这个session。 简单的说和UI生命周期相关的回调都交给了SceneDelegate 这个delegate，而appdelegate主要负责 app 生命周期相关的回调。对于window来说，作为一个特殊的UI，也自然的变成了SceneDelegate的一个property，我们可以在SceneDelegate的头文件中找到它，并在willConnectToSession这个函数中使用。同时在删除main.storyboard的时候，在和课程中相同的删除操作之上，也需要删除在info.plist中的Application Scene Manifest中对应storyboard的默认设置</p></blockquote><h2 id="UIScrollView"><a href="#UIScrollView" class="headerlink" title="UIScrollView"></a>UIScrollView</h2><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653382781813.jpg" srcset="/img/loading.gif" alt=""></p><ul><li><p>回调的Delegate: 实时获取监控<code>scrollViewDidScroll:</code>开始拖拽<code>scrollViewWillBeginDragging:</code>完成拖拽、减速加速等等</p></li><li><p>应用场景<br><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653399091199.jpg" srcset="/img/loading.gif" alt=""></p><ul><li>竖向是UITableView或UICollectionView，横向是UIScrollView</li><li><strong>功能上</strong>继承关系UIView - UIScrollView - UITableView(UICollectionView)</li><li><strong>Delegate</strong>上 UIScrollViewDelegate - UICollectionViewDelegate(UITableViewDelegate) 所以在实现了后面两个Delegate的时候也可以实现UIScrollViewDelegate的方法（子类Delegate）</li></ul></li></ul><h3 id="UITableView"><a href="#UITableView" class="headerlink" title="UITableView"></a>UITableView</h3><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653214745508.jpg" srcset="/img/loading.gif" alt=""></p><ul><li><p>一个储存格为一个Cell 竖着排列。</p></li><li><p>取屏幕尺寸：<code>UIScreen.mainScreen().bound.size</code> </p></li><li><p>创建流程： </p><ol><li>建立一个UITableView并设好约束。 </li><li>注册Cell（可以用TableView自带的或自己创建） </li><li>设置Delegate <code>tableView.delegate = self;</code> <code>.dataSource=self</code> </li><li>分割线样式属性.separatorstyle. 间距:UIEdgeInsetsMake(上,下,左,右) 是否能点（allowSelection, allowsMultipleSelection） </li><li><code>self.view addSubview:</code></li></ol></li><li><p>addSubview可以通过一个闭包的写法。<br><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15655795563667.jpg" srcset="/img/loading.gif" alt=""></p></li><li><p>UITableViewDelegate的代理required方法</p><p><code>heightForRowAtIndexPath: // 返回TableView每一行的高度</code></p><p><code>didSelectRowAtIndexPath: // 点每一行的时候触发逻辑，根据indexPath来确定点了什么位置</code> </p></li><li><p>UITableViewDataSource的require方法：</p><p><code>numberOfRowInSection //每一组有几个cell</code></p><p> <code>cellForRowAtIndexPath // 每个cell是什么内容，基于IndexPath</code></p></li><li><p>IndexPath: section和row(把section理解成章， row是节) 默认是一个section。</p><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653350487203.jpg" srcset="/img/loading.gif" alt=""></p></li><li><p>重用和复用回收池：思路是在cellForRowAtIndexPath方法中拿cell的时候，先在系统的回收池看看能不能拿到这个cell，能拿到就可以复用该cell，不能就创建一个。</p><pre><code class="lang-objc">UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@&quot;你的Cell ID&quot;];if (!cell) {    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle                                  reuseIdentifier:@&quot;Cell ID&quot;];}</code></pre></li><li><p>Cell可以通过。Xib文件创建。也可以通过代码重写注册方法创建。在self.contextView addSubView就可以设置了。</p></li></ul><h3 id="UICollectionView"><a href="#UICollectionView" class="headerlink" title="UICollectionView"></a>UICollectionView</h3><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15653354495747.jpg" srcset="/img/loading.gif" alt=""></p><ul><li><p>弹幕功能的实现</p></li><li><p>UICollectionViewDelegate 常用代理方法</p><p><code>willDisplayCell / endDisplayCell</code> </p><p><code>collectionView:didSelectItemAtIndexPath: // 选中某一个执行</code> </p></li><li><p>UICollectionDataSourceDelegate常用代理方法</p><p> <code>numberOfItemsInSection: // 有多少个Item</code> <code>cellForItemAtIndexPath: // cell长什么样子</code> </p></li><li><p>indexPath: section(第几行) <strong>item</strong>(一行的第几个，这里跟TableViewController不同)要区分第几个用row不合适，但就是单词换了，逻辑是一样的）</p></li><li><p>跟TableView不同的是，<strong>必须先注册Cell类型用于重用</strong>步骤：</p><ol><li><code>registerClass:forCellWithReuseIdentifier: // 注册</code> (在一开始注册就行，不用再每次都调用) </li><li><code>dequeueReusabelCellWithReuseIdentifier:forIndexPath: // 重用</code> </li><li>要设置一个flowLayout（流式布局）。 其他都类似TableView</li></ol><pre><code class="lang-objc">// 在代理方法中- (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {    UICollectionViewCell *cell = [collectionView                                             dequeueReusableCellWithReuseIdentifier:@&quot;id&quot;                                                             forIndexPath:indexPath];    return cell;}</code></pre></li><li><p>创建UICollectionView的时候要用collectionViewLayout(一般flowLayout)。</p></li></ul><h4 id="UICollectionViewFlowLayout"><a href="#UICollectionViewFlowLayout" class="headerlink" title="UICollectionViewFlowLayout"></a>UICollectionViewFlowLayout</h4><ul><li><p>流式布局，每行排满后自动换行</p></li><li><p>流式布局属性</p><p><code>.minimumLineSpacing = 10</code>（对应两个section之间的距离） </p><p> <code>.minimumInteritemSpacing = 10</code>（对应一个section中每个item间的距离）</p><p> <code>.itemSize = CGSizeMake((self.view.frame.size.width - 10) / 2, 300);</code> （item的大小）</p></li></ul><h2 id="UILabel"><a href="#UILabel" class="headerlink" title="UILabel"></a>UILabel</h2><p>(展示一行或多行只读文字视图)</p><ul><li><p>text: <code>@&quot;123&quot;</code></p></li><li><p>font: UIFont(大小、粗体、斜体)</p></li><li><p>textColor:文字颜色</p></li><li><p>textAlignment: 对齐方式（居中、左对齐、右对齐）</p></li><li><p>numberOfLines:最大展示行数</p></li><li><p>lineBreakMode：长度不够时截断方式（截断左边，截断中间）,以<code>victor&#39;s iPhone</code>为例</p><p><code>NSLineBreakByClipping</code> : <code>victor&#39;s iPh</code>（切掉右边，不带省略号）</p><p><code>NSLineBreakTruncatingTail</code>:<code>victor&#39;s iPh...</code>（省略右边）</p><p><code>NSLineBreakTruncatingMiddle</code>：<code>vict ... iPhone</code> （省略中间）</p><p><code>NSLineBreakTruncatingHead</code> :<code>...tor&#39;s iPhone</code> （省略头部）</p></li><li><p>函数<code>(void)sizeToFit</code>：可变大小</p></li></ul><h2 id="UIImage-gt-UImageView"><a href="#UIImage-gt-UImageView" class="headerlink" title="UIImage -&gt; UImageView"></a>UIImage -&gt; UImageView</h2><ul><li><p>通过UIImageView来展示： 常用图片类型：png、jpeg、pdf</p></li><li><p>获取UIImage对象系统方法总结：</p><p><code>+ (nullable UIImage *)imageNamed:(NSString *)name;</code></p><p> <code>+ (nullable UIImage *)imageWithContentsOfFile:(NSString *)path;</code> </p><p><code>+ (nullable UIImage *)imageWithData:(NSData *)data;</code></p><p> <code>+ (UIImage *)imageWithCGImage:(CGImageRef)cgImage;</code></p></li><li><p><strong>UIViewContentMode</strong>:当图片的尺寸和UIImageView尺寸不符合发的时候，自定义填充。 </p><pre><code class="lang-objc">typedef NS_ENUM(NSInteger, UIViewContentMode) {//图片拉伸填充至整个UIImageView(图片可能会变形),这也是默认的属性,如果什么都不设置就是它在起作用    UIViewContentModeScaleToFill,//图片拉伸至完全显示在UIImageView里面为止(图片不会变形)    UIViewContentModeScaleAspectFit,//图片拉伸至图片的的宽度或者高度等于UIImageView的宽度或者高度为止.看图片的宽高哪一边最接近UIImageView的宽高,一个属性相等后另一个就停止拉伸.    UIViewContentModeScaleAspectFill,//调用setNeedsDisplay 方法时,就会重新渲染图片//下面的属性都是不会拉伸图片的    UIViewContentModeRedraw,//中间模式    UIViewContentModeCenter, //顶部    UIViewContentModeTop,//底部    UIViewContentModeBottom,//左边    UIViewContentModeLeft,//右边    UIViewContentModeRight,//左上    UIViewContentModeTopLeft,//右上    UIViewContentModeTopRight,//左下    UIViewContentModeBottomLeft,//右下    UIViewContentModeBottomRight,};</code></pre></li></ul><h2 id="UIButton"><a href="#UIButton" class="headerlink" title="UIButton"></a>UIButton</h2><p> 对UIControl(继承自UIView)（<strong>不是UIController</strong>）进行封装，实现了UIControl自定义的功能。可以展示（根据不同状态展示不同） 和 交互。</p><ul><li><p>常见状态</p><p>  <code>UIControlStateNormal(正常状态)</code></p><p>  <code>UIControlStateHighlighted(选中状态)</code></p><p> e.g. <code>[self.button setTitle:@&quot;...&quot; forState:UIControlStateNormal]</code></p></li></ul><ul><li><p>监听对应事件，通过Target-Action处理一些点击事件</p></li><li><p>UIButton通过Target-Action的模式，处理点击逻辑</p><pre><code class="lang-objc">  [self.button addTarget:self</code></pre></li></ul><h2 id="UIGestureRecognizer"><a href="#UIGestureRecognizer" class="headerlink" title="UIGestureRecognizer"></a>UIGestureRecognizer</h2><ul><li><p>可以在任何视图增加一个或者多个手势。系统自动识别手势。开发者自定义响应逻辑。</p></li><li><p>采用Target - Action的方式进行处理</p></li><li><p>流程：创建手势 - 设置响应处理 - 在视图中添加</p><pre><code class="lang-objc">// 注册手势UITapGestureRecognizer *tapGesture =     [[UITapGestureRecognizer alloc] initWithTarget:self                                     action:@selector(viewClick)]// 在view中添加手势[view addGestureRecognizer:tapGesture];</code></pre></li><li><p>可以通过UIGestureRecognizerDelegate来实现对应状态。</p></li><li><p>常见手势封装：<code>Tap</code>、<code>Pitch</code>、<code>Rotation</code>、<code>Swipe</code>、<code>Pan</code>、<code>LongPress</code></p></li></ul><h2 id="UIAlertView（已经废弃了）"><a href="#UIAlertView（已经废弃了）" class="headerlink" title="UIAlertView（已经废弃了）"></a><del>UIAlertView（已经废弃了）</del></h2><p>UIAlertView is <strong>deprecated</strong>. iOS8之后UIAlertView被弃用 UIAlertController成功上位。<br><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/15655770408648.jpg" srcset="/img/loading.gif" alt=""></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+      <category>UIKit</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>一些规范记录</title>
+    <link href="/2020/03/01/%E8%A7%84%E8%8C%83/"/>
+    <url>/2020/03/01/%E8%A7%84%E8%8C%83/</url>
+    
+    <content type="html"><![CDATA[<h1 id="规范"><a href="#规范" class="headerlink" title="规范"></a>规范</h1><h2 id="Xcode工具"><a href="#Xcode工具" class="headerlink" title="Xcode工具"></a>Xcode工具</h2><ul><li><p>使用 refactor 重命名的时候可以把注释也加上。改完以后有可能会丢失文件报错，需要show in finder 然后查找原文件改名 。</p></li><li><p>注释最好写出自解释的代码，但一定要加注释的地方（<strong>令人迷惑的字符串或者数字</strong>等等）。头文件<strong>每个类</strong>中注释其功能以及其实现的意义（opt + cmd + /）</p></li><li><p>需要注释地方：： <strong>每个类、 公有方法、 令人迷惑的字符串</strong></p></li><li><p>编译器指令： <code>#pragma mark</code>  ==  <code>// MARK</code>  </p><p> <code>// MARK: - xxx</code> </p><p><code>// FIXME: - xxx</code></p><p> <code>// TODO:</code>有-x代表一个横. </p><p><code>// ???:</code>有疑问 </p><p><code>// !!!:</code> 要注意</p></li></ul><h2 id="文件代码结构"><a href="#文件代码结构" class="headerlink" title="文件代码结构"></a>文件代码结构</h2><ul><li>类自身的初始化一般收敛到类本身</li><li>项目文件夹一般按照业务逻辑进行归类</li><li>私有函数在名字前面加 _ 代表其是私有方法</li></ul><h2 id="Extension"><a href="#Extension" class="headerlink" title="Extension"></a>Extension</h2><ul><li><p>XCFormat</p><ol><li>可以安装 &amp; 自定义设置（nl_fdef_brace），团队代码统一</li><li>设置快捷键</li></ol></li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Xcode常用快捷键</title>
+    <link href="/2020/03/01/Xcode%E5%B8%B8%E7%94%A8%E5%BF%AB%E6%8D%B7%E9%94%AE/"/>
+    <url>/2020/03/01/Xcode%E5%B8%B8%E7%94%A8%E5%BF%AB%E6%8D%B7%E9%94%AE/</url>
+    
+    <content type="html"><![CDATA[<h1 id="个人常用快捷键"><a href="#个人常用快捷键" class="headerlink" title="个人常用快捷键"></a>个人常用快捷键</h1><h4 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h4><p><code>cmd + option + /</code></p><h4 id="格式化代码"><a href="#格式化代码" class="headerlink" title="格式化代码"></a>格式化代码</h4><p>自己安装了XCFormat<br><code>control + cmd + 1</code></p><h4 id="按名字查找文件"><a href="#按名字查找文件" class="headerlink" title="按名字查找文件"></a>按名字查找文件</h4><p><code>shift + cmd + o</code></p><h4 id="正在打开的界面立刻在-Navigation中找到"><a href="#正在打开的界面立刻在-Navigation中找到" class="headerlink" title="正在打开的界面立刻在 Navigation中找到"></a>正在打开的界面立刻在 Navigation中找到</h4><p><code>shift + cmd + j</code></p><h4 id="切换-h和-m文件"><a href="#切换-h和-m文件" class="headerlink" title="切换.h和.m文件"></a>切换.h和.m文件</h4><p><code>control + cmd + ↑</code> <strong>或</strong> <code>control + cmd + ↓</code></p><h4 id="回退-前进-到上个光标"><a href="#回退-前进-到上个光标" class="headerlink" title="回退(前进)到上个光标"></a>回退(前进)到上个光标</h4><p><code>control + cmd + ←</code>  <code>control + cmd + →</code></p><h4 id="折叠-展开-代码块"><a href="#折叠-展开-代码块" class="headerlink" title="折叠(展开)代码块"></a>折叠(展开)代码块</h4><p><code>opt + cmd + ←</code> <code>opt + cmd + →</code></p><h4 id="查找当前文件"><a href="#查找当前文件" class="headerlink" title="查找当前文件"></a>查找当前文件</h4><p><code>cmd + f</code></p><h1 id="技巧"><a href="#技巧" class="headerlink" title="技巧"></a>技巧</h1><h4 id="当一个对象不会被使用的时候"><a href="#当一个对象不会被使用的时候" class="headerlink" title="当一个对象不会被使用的时候"></a>当一个对象不会被使用的时候</h4><p>在前面声名关键字<code>__unused</code></p><h4 id="Debug时候打印对象属性"><a href="#Debug时候打印对象属性" class="headerlink" title="Debug时候打印对象属性"></a>Debug时候打印对象属性</h4><p>打断点，在控制台 <code>po 对象.属性</code></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>iOS</category>
+      
+      <category>Xcode</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>C++之this指针</title>
+    <link href="/2020/02/29/C-%E4%B9%8Bthis%E6%8C%87%E9%92%88/"/>
+    <url>/2020/02/29/C-%E4%B9%8Bthis%E6%8C%87%E9%92%88/</url>
+    
+    <content type="html"><![CDATA[<h3 id="this-pointer-指针-in-C"><a href="#this-pointer-指针-in-C" class="headerlink" title="this pointer(指针) in C++"></a><code>this</code> pointer(指针) in C++</h3><ul><li>每一个类的对象来说，成员属性是在每个对象是一个是副本。</li><li>而对于每个对象是共享一个类的成员函数。（this是解决区分谁调用了这个成员函数）</li></ul><p>通俗来说，this指针是用来区分哪一个对象。this指针作为隐藏参数传递给所有非静态成员变量函数调用，而且可以用作所有<strong>非静态函数体</strong>内部的局部变量。</p><p><em>静态函数是不能访问有this指针的，他是属于类的。</em></p><h4 id="作用1"><a href="#作用1" class="headerlink" title="作用1"></a>作用1</h4><p>初始化对象的成员变量(本地变量与成员变量重名的时候，当然不重名的时候也可以使用)</p><pre><code class="lang-c++">#include&lt;iostream&gt; using namespace std; /* local variable is same as a member&#39;s name */class Test { private:    int x; public:    void setX (int x)    {        // The &#39;this&#39; pointer is used to retrieve the object&#39;s x        // hidden by the local variable &#39;x&#39;        this-&gt;x = x;    }    void print() { cout &lt;&lt; &quot;x = &quot; &lt;&lt; x &lt;&lt; endl; } }; int main() {    Test obj;    int x = 20;    obj.setX(x);    obj.print();   // 输出结果：x = 20   return 0; }</code></pre><h4 id="作用2"><a href="#作用2" class="headerlink" title="作用2"></a>作用2</h4><p>返回调用对象的引用（从而可以链式设置等）</p><pre><code class="lang-c++">/* Reference to the calling object can be returned */ Test&amp; Test::func () {    // Some processing    return *this; }</code></pre><p>注意这里成员函数<code>func</code>返回的引用 <code>&amp;</code></p><pre><code class="lang-c++">#include&lt;iostream&gt; using namespace std; class Test { private:   int x;   int y; public:   Test(int x = 0, int y = 0) { this-&gt;x = x; this-&gt;y = y; }   Test &amp;setX(int a) { x = a; return *this; }  // 返回对象引用  Test &amp;setY(int b) { y = b; return *this; }  // 返回对象引用  void print() { cout &lt;&lt; &quot;x = &quot; &lt;&lt; x &lt;&lt; &quot; y = &quot; &lt;&lt; y &lt;&lt; endl; } }; int main() {   Test obj1(5, 5);   // Chained function calls.  All calls modify the same object   // as the same object is returned by reference   obj1.setX(10).setY(20);   // 链式设置  obj1.print();  // 输出结果：x = 10 y = 20  return 0; }</code></pre><h4 id="作用3"><a href="#作用3" class="headerlink" title="作用3"></a>作用3</h4><p>删除对象</p><pre><code class="lang-c++">#include&lt;iostream&gt; using namespace std; class Test { private:   int x;   int y; public:   Test(int x = 0, int y = 0) { this-&gt;x = x; this-&gt;y = y; }   void setX(int a) { x = a; }   void setY(int b) { y = b; }   void destroy()  { delete this; }  // 删除这个对象调用各个成员变量的析构方法  void print() { cout &lt;&lt; &quot;x = &quot; &lt;&lt; x &lt;&lt; &quot; y = &quot; &lt;&lt; y &lt;&lt; endl; } }; int main() {   Test obj;   obj.print();   // print()一定要在destroy之前  obj.destroy();   // 删除掉了obj所指的对象  return 0; }</code></pre><h4 id="刷LeetCode时候规范用法"><a href="#刷LeetCode时候规范用法" class="headerlink" title="刷LeetCode时候规范用法"></a>刷LeetCode时候规范用法</h4><p>把函数参数赋值给<code>this-&gt;成员属性</code>，这样可以再任何地方使用成员属性，就不用作为引用参数传入了。</p><pre><code class="lang-c++">class Solution {private:    vector&lt;vector&lt;int&gt;&gt; a;  // 自己定义成员变量    int n, m;  // // 自己定义成员变量    void solve() {        a[0][0] = 1;        // ... 正常使用a, m, n    }public:      int getMaximumGold(vector&lt;vector&lt;int&gt;&gt;&amp; a) {        this-&gt;a = a;    // 把本地变量赋值给同名的数据成员(data member)        this-&gt;n = a.size(), this-&gt;m = a[0].size();  // // 把本地变量赋值给同名的数据成员(data member)        solve();        // 操作逻辑...        //return ans;    }};</code></pre><h4 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h4><p><a href="https://www.geeksforgeeks.org/this-pointer-in-c/" target="_blank" rel="noopener">geeksforgeeks</a> </p>]]></content>
+    
+    
+    <categories>
+      
+      <category>C++</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Java快速读写模板</title>
+    <link href="/2020/02/19/Java%E5%BF%AB%E9%80%9F%E8%AF%BB%E5%86%99%E6%A8%A1%E6%9D%BF/"/>
+    <url>/2020/02/19/Java%E5%BF%AB%E9%80%9F%E8%AF%BB%E5%86%99%E6%A8%A1%E6%9D%BF/</url>
+    
+    <content type="html"><![CDATA[<h2 id="刷题快速读写做题模板1"><a href="#刷题快速读写做题模板1" class="headerlink" title="刷题快速读写做题模板1"></a>刷题快速读写做题模板1</h2><pre><code class="lang-java">import java.io.OutputStream;import java.io.IOException;import java.io.InputStream;import java.io.PrintWriter;import java.io.InputStreamReader;import java.util.StringTokenizer;import java.io.BufferedReader;public class Main {    static class InputReader {        public BufferedReader reader;        public StringTokenizer tokenizer;        public InputReader(InputStream stream) {            reader = new BufferedReader(new InputStreamReader(stream), 32768);            tokenizer = null;        }        public String nextLine() {            while(tokenizer == null || !tokenizer.hasMoreElements()){                try {                    tokenizer =new StringTokenizer(reader.readLine());                } catch (IOException e) {                    throw new RuntimeException(e);                }            }            return tokenizer.nextToken(&quot;\n&quot;);        }        public String next() {            while (tokenizer == null || !tokenizer.hasMoreTokens()) {                try {                    tokenizer = new StringTokenizer(reader.readLine());                } catch (IOException e) {                    throw new RuntimeException(e);                }            }            return tokenizer.nextToken();        }        public int nextInt() {            return Integer.parseInt(next());        }        public long nextLong() {            return Long.parseLong(next());        }    }    public static void main(String[] args) {        InputStream inputStream = System.in;        OutputStream outputStream = System.out;        InputReader in = new InputReader(inputStream);        PrintWriter out = new PrintWriter(outputStream);        Solver solver = new Solver();        int T = 1;        // int T = in.nextInt();        for (int i = 1; i &lt;= T; i++) solver.start(T, in, out);        out.close();    }    static class Solver {        public void start(int testNumber, InputReader in, PrintWriter out) {        }    }}</code></pre><h2 id="刷题快速读写做题模板2"><a href="#刷题快速读写做题模板2" class="headerlink" title="刷题快速读写做题模板2"></a>刷题快速读写做题模板2</h2><pre><code class="lang-java">import java.io.*;import java.util.InputMismatchException;public class Main {    static class Solver {        public void doing(int testNumber, InputReader in, OutputWriter out) {        }    }    public static void main(String[] args) throws FileNotFoundException {//        FileInputStream fis = new FileInputStream(&quot;out/production/interview/in.txt&quot;);//        System.setIn(fis);        InputReader in = new InputReader(System.in);        OutputWriter out = new OutputWriter(System.out);        Solver solver = new Solver();//        int testCount = Integer.parseInt(in.next());    // many case        int testCount = 1;    // one case        for (int i = 1; i &lt;= testCount; i++) solver.doing(i, in, out);        out.close();    }    // ----- IO -----    static class InputReader {        private InputStream stream;        private byte[] buf = new byte[1 &lt;&lt; 16];        private int curChar;        private int numChars;        public InputReader(InputStream stream) {            this.stream = stream;        }        public int read() {            if (this.numChars == -1) {                throw new InputMismatchException();            } else {                if (this.curChar &gt;= this.numChars) {                    this.curChar = 0;                    try {                        this.numChars = this.stream.read(this.buf);                    } catch (IOException var2) {                        throw new InputMismatchException();                    }                    if (this.numChars &lt;= 0) {                        return -1;                    }                }                return this.buf[this.curChar++];            }        }        public int nextInt() {            int c;            for (c = this.read(); isSpaceChar(c); c = this.read()) {                ;            }            byte sgn = 1;            if (c == 45) {                sgn = -1;                c = this.read();            }            int res = 0;            while (c &gt;= 48 &amp;&amp; c &lt;= 57) {                res *= 10;                res += c - 48;                c = this.read();                if (isSpaceChar(c)) {                    return res * sgn;                }            }            throw new InputMismatchException();        }        public String next() {            int c;            while (isSpaceChar(c = this.read())) {                ;            }            StringBuilder result = new StringBuilder();            result.appendCodePoint(c);            while (!isSpaceChar(c = this.read())) {                result.appendCodePoint(c);            }            return result.toString();        }//        long nextLong()//        {//            return Long.parseLong(next());//        }//        double nextDouble()//        {//            return Double.parseDouble(next());//        }//        BigInteger nextBigInteger()//        {//            return new BigInteger(next());//        }//        BigDecimal nextBigDecimal()//        {//            return new BigDecimal(next());//        }        public static boolean isSpaceChar(int c) {            return c == 32 || c == 10 || c == 13 || c == 9 || c == -1;        }    }    static class OutputWriter {        private final PrintWriter writer;        public OutputWriter(OutputStream outputStream) {            writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outputStream)));        }        public OutputWriter(Writer writer) {            this.writer = new PrintWriter(writer);        }        public void printf(String format, Object... objects) {            writer.printf(format, objects);        }        public void close() {            writer.close();        }    }}</code></pre><p><code>Integer.parseInt(in.next())</code></p><h2 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h2><p>将System.out的输入（出）重定向到文件输入（出）</p><pre><code class="lang-java">// 输入FileInputStream fis = new FileInputStream(&quot;out/production/interview/in.txt&quot;);System.setIn(fis);// 输出PrintStream ps = new PrintStream(new FileOutputStream(&quot;output.txt&quot;));System.setOut(ps);Scanner in = new Scanner(new BufferedReader(new InputStreamReader(System.in)));</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>Java</category>
+      
+      <category>集合类</category>
+      
+      <category>技巧</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>并查集</title>
+    <link href="/2019/05/13/%E5%B9%B6%E6%9F%A5%E9%9B%86/"/>
+    <url>/2019/05/13/%E5%B9%B6%E6%9F%A5%E9%9B%86/</url>
+    
+    <content type="html"><![CDATA[<h1 id="并查集实现"><a href="#并查集实现" class="headerlink" title="并查集实现"></a>并查集实现</h1><p>主要解决图论中联通分量的问题</p><h3 id="并查集实现-1"><a href="#并查集实现-1" class="headerlink" title="并查集实现"></a>并查集实现</h3><pre><code class="lang-c++">struct UF {    int count;    vector&lt;int&gt; p, siz;    UF(int n) {        count = n;        p = vector&lt;int&gt;(n, -1);        siz = vector&lt;int&gt;(n, 1);    }    int find(int x) {        if (p[x] == -1) return x;        return p[x] = find(p[x]);    }    void join(int x, int y) {        int t1 = find(x);        int t2 = find(y);        if (t1 != t2) {            p[t2] = t1;            siz[t1] += siz[t2];            count--;        }    }};</code></pre><ul><li><p>初始化</p><pre><code class="lang-c++">UF uf(1000);   // 0 ~ 999编号</code></pre></li><li><p>并  （合并两个节点的集合）</p><pre><code class="lang-c++">uf.join(5, 6);  // 把5和6所在的集合并起来</code></pre></li><li><p>查  （询问两个节点是否在同一个集合）</p><pre><code class="lang-c++">uf.find(5) == uf.find(6);    // 查编号5的节点跟编号6的节点是不是一个集合的</code></pre></li><li><p>有多少个集合（有多少个连通分量）</p><pre><code class="lang-c++">uf.count;// 或者笨笨办法办法统计父节点为-1的元素个数</code></pre></li><li><p>对应节点所在集合的元素个数</p><pre><code class="lang-c++">uf.siz[uf.find(5)];  // 5节点所在集合的节点个数</code></pre></li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>图论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>图的构建</title>
+    <link href="/2019/05/12/%E5%9B%BE%E7%9A%84%E6%9E%84%E5%BB%BA/"/>
+    <url>/2019/05/12/%E5%9B%BE%E7%9A%84%E6%9E%84%E5%BB%BA/</url>
+    
+    <content type="html"><![CDATA[<h1 id="树-amp-图"><a href="#树-amp-图" class="headerlink" title="树 &amp; 图"></a>树 &amp; 图</h1><ul><li>树是特殊的图， 无向图是特殊的有向图，所以只需要研究有向图的即可</li></ul><h2 id="邻接矩阵"><a href="#邻接矩阵" class="headerlink" title="邻接矩阵"></a>邻接矩阵</h2><p>(稠密图使用， N^2 跟M是一个规模的时候才使用)<br><strong>优点：</strong> 找任意两点是否连通块， 可以多存一维的信息，如g[i][j]可以代表权重  </p><h3 id="构建"><a href="#构建" class="headerlink" title="构建"></a>构建</h3><pre><code class="lang-c++">int g[N][N];    // LeetCode 这样给出 vector&lt;vector&lt;int&gt;&gt; edge// g[a][b] 存储边a-&gt;bvoid add(int a, int b) {    g[a][b] = 1;    // g[b][a] = 1;}</code></pre><ul><li>处理自环和重边， 只需要保留最小的一条边就可以了</li></ul><h3 id="Dijkstra朴素版本"><a href="#Dijkstra朴素版本" class="headerlink" title="Dijkstra朴素版本"></a>Dijkstra朴素版本</h3><p>朴素算法: 适合使用邻接矩阵，在边数特别多的时候才使用邻接矩阵的朴素版本<br>时间复杂度为 O( N^2 )  因为n比较小所以使用</p><p>思路：</p><ol><li>把出发点u设置成0 dist[u] = 0， 其余点都设置成为 正无穷</li><li>迭代n次(n为节点个数) 将没有确定的点里出发点u最近的点找出来，设为t；</li><li>t加入确定的点中</li><li>用t更新 跟t连接的点的距离(从出发点到该点， 还是t作为中介点)</li></ol><p>从1点到n点的最小值。 Acwing 849</p><pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;using namespace std;const int N = 510;int g[N][N], n, m;int dist[N], vis[N];void add(int a, int b, int c) {    g[a][b] = min(g[a][b], c);}int dijkstra(int u) {    memset(dist, 0x3f, sizeof dist);    // 记得每次先初始化距离    dist[u] = 0;    for (int i = 0; i &lt; n; i++) {    // 进行n次迭代，每次迭代加入一个点        int t = -1;        for (int j = 1; j &lt;= n; j++) {            if (!vis[j] &amp;&amp; (t == -1 || dist[t] &gt; dist[j])) {                t = j;            }        }        vis[t] = 1;        for (int j = 1; j &lt;= n; j++) {            dist[j] = min(dist[j], dist[t] + g[t][j]);        }    }    if (dist[n] == 0x3f3f3f3f) return -1;    return dist[n];}int main() {    memset(g, 0x3f, sizeof g);    scanf(&quot;%d%d&quot;, &amp;n, &amp;m);    for (int i = 0; i &lt; m; i++) {        int a, b, c; scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;c);        add(a, b, c);    }    int ans = dijkstra(1);    printf(&quot;%d\n&quot;, ans);    return 0;}</code></pre><h2 id="邻接表"><a href="#邻接表" class="headerlink" title="邻接表"></a>邻接表</h2><p>(稀疏图使用 N跟M的规模差不多的时候) 使用较多</p><p><strong>优点：</strong> 找一个顶点的所有边比较快， 省空间， 可以有重边</p><h3 id="构建-1"><a href="#构建-1" class="headerlink" title="构建"></a>构建</h3><p>使用一个单链表(静态)，把每个节点对应的边组成一条链。 h[k] 存储这个顶点k的边链的头结点</p><pre><code class="lang-c++">/** * 节点维度 N个顶点 * h[i] 对应节点中边链中一个的地址 *  * 边维度 M 最多有 N*(N-1)条边 每一个节点都跟另外N-1个顶点有边 * e[] 地址对应的node元素是几号，即这个地址对应的元素编号 * ne[] 下一条边的地址 * inx 边的数量，一直指向最后添加进来的一条边的地址。 idx是对应元素的地址 */int h[N], e[M], ne[M], idx;void add(int a, int b) {    e[idx] = b; ne[idx] = h[a], h[a] = idx++;}// !!!!务必记得初始化memset(h, -1, sizeof h);idx = 0; // 全局变量自动为0</code></pre><h3 id="遍历一个顶点的所有边"><a href="#遍历一个顶点的所有边" class="headerlink" title="遍历一个顶点的所有边"></a>遍历一个顶点的所有边</h3><p>遍历6号顶点的所有边</p><pre><code class="lang-c++">for (int i = h[6]; i != -1; i = ne[i]) {    cout &lt;&lt; e[i] &lt;&lt; &quot; &quot;;    // e[i]为顶点编号}</code></pre><h3 id="dfs"><a href="#dfs" class="headerlink" title="dfs"></a>dfs</h3><ul><li>一条路走到黑, 可以带返回值上来</li></ul><pre><code class="lang-c++">// 返回以u为根节点的子树的大小 Acwing846题int dfs(int u) {    vis[u] = 1;    int size = 1, king = 0;    for (int i = h[u]; i != -1; i = ne[i]) {        int child = e[i];        if (!vis[child]) {            int t = dfs(child);            king = max(king, t);            size += t;        }    }    king = max(king, n - size);    ans = min(ans, king);    return size;}</code></pre><h3 id="bfs"><a href="#bfs" class="headerlink" title="bfs"></a>bfs</h3><p>把bfs 算法应用于无权图，或者所有边的权都相等的图，bfs搜索等同于Dijkstra算法。</p><pre><code class="lang-c++">int h[N], e[N], ne[N], idx;bool vis[N];int dist[N];// 计算u节点到n节点的最短距离(无权图距离都是1)int bfs(int u) {    memset(dist, -1, sizeof dist);    dist[u] = 0;    vis[u] = true;    queue&lt;int&gt; q;    q.push(u);    while (!q.empty()) {        int t = q.front();        q.pop();        for (int i = h[t]; i != -1; i = ne[i]) {            int j = e[i];            if (!vis[j]) {  // 不要漏了                vis[j] = true;                q.push(j);                dist[j] = dist[t] + 1;            }        }    }    return dist[n];}</code></pre><h3 id="Dijkstra-堆优化"><a href="#Dijkstra-堆优化" class="headerlink" title="Dijkstra 堆优化"></a>Dijkstra 堆优化</h3><p>稀疏图的时候使用<br>常用 时间复杂度 O(mlogn)</p><pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;using namespace std;typedef pair&lt;int, int&gt; PII;const int N = 1e5 + 10;int h[N], e[N], w[N], ne[N], idx;int dist[N], vis[N];int n, m;void add(int a, int b, int c) {    e[idx] = b, ne[idx] = h[a], h[a] = idx, w[idx++] = c;}int dijkstra(int u) {    memset(dist, 0x3f, sizeof dist);    priority_queue&lt;PII, vector&lt;PII&gt;, greater&lt;PII&gt;&gt; q;    // 初始化循环不变式    dist[u] = 0;    q.push({dist[u], u});    while (!q.empty()) {        auto t = q.top();        q.pop();        int ver = t.second, d = t.first;        if (vis[ver]) continue;    // 因为不是索引堆，所以更新边是直接插入，所有有可能会有冗余边！！！        vis[ver] = 1;        dist[ver] = d;        for (int i = h[ver]; i != -1; i = ne[i]) {            int j = e[i];            if (!vis[j] &amp;&amp; dist[j] &gt; dist[ver] + w[i]) {   // 对于所有未走过且经过ver的节点j，都更新从起点u到ver，再从ver到j的距离是否更短                dist[j] = dist[ver] + w[i];                q.push({dist[j], j});            }        }    }    if (dist[n] == 0x3f3f3f3f) return -1;    return dist[n];}int main() {    memset(h, -1, sizeof h);    scanf(&quot;%d%d&quot;, &amp;n, &amp;m);    for (int i = 0; i &lt; m; i++) {        int a, b, c; scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;c);        add(a, b, c);    }    int ans = dijkstra(1);    printf(&quot;%d&quot;, ans);    return 0;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>图论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>非递归前中后遍历总结</title>
+    <link href="/2019/02/20/%E5%89%8D%E4%B8%AD%E5%90%8E%E9%81%8D%E5%8E%86/"/>
+    <url>/2019/02/20/%E5%89%8D%E4%B8%AD%E5%90%8E%E9%81%8D%E5%8E%86/</url>
+    
+    <content type="html"><![CDATA[<h1 id="非递归前中后遍历总结"><a href="#非递归前中后遍历总结" class="headerlink" title="非递归前中后遍历总结"></a>非递归前中后遍历总结</h1><ul><li>对于一个二叉树而言，前中后遍历分别对应第1，2，3次访问该节点。如在第一次访问该节点输出就是前序遍历，第二次访问该节点就是中序遍历，第三次访问该节点就是后序遍历。 在网上找到一张有意思的图。</li></ul><p><img src="/img/IMG_0065.jpg" srcset="/img/loading.gif" alt=""></p><h2 id="用中序遍历的思想实现前后遍历"><a href="#用中序遍历的思想实现前后遍历" class="headerlink" title="用中序遍历的思想实现前后遍历"></a>用中序遍历的思想实现前后遍历</h2><p>(常用遍历技巧)</p><h3 id="前序遍历"><a href="#前序遍历" class="headerlink" title="前序遍历"></a>前序遍历</h3><pre><code class="lang-c++">vector&lt;int&gt; preorderTraversal(TreeNode* root) {    vector&lt;int&gt; ans;    stack&lt;TreeNode*&gt; stk;    auto p = root;    while (p || !stk.empty()) {        while (p) {            ans.push_back(p-&gt;val);  // 前序遍历 ①            stk.push(p);            p = p-&gt;left;        }        p = stk.top(); stk.pop();            p = p-&gt;right;    }    return ans;}</code></pre><h3 id="中序遍历"><a href="#中序遍历" class="headerlink" title="中序遍历"></a>中序遍历</h3><pre><code class="lang-c++">vector&lt;int&gt; inorderTraversal(TreeNode* root) {    vector&lt;int&gt; ans;    stack&lt;TreeNode*&gt; stk;    auto p = root;    while (p || !stk.empty()) {        while (p) {            stk.push(p);            p = p-&gt;left;        }        p = stk.top(); stk.pop();        ans.push_back(p-&gt;val);  // 中序遍历 ②        p = p-&gt;right;    }    return ans;}</code></pre><h3 id="后序遍历"><a href="#后序遍历" class="headerlink" title="后序遍历"></a>后序遍历</h3><p>经典例题：<a href="https://leetcode-cn.com/problems/path-sum-ii/" target="_blank" rel="noopener">113. 路径总和 II</a> 的非递归写法</p><pre><code class="lang-c++">vector&lt;int&gt; postorderTraversal(TreeNode* root) {        vector&lt;int&gt; ans;        stack&lt;TreeNode*&gt; stk;        TreeNode* p = root, *prev = nullptr;  // prev 来标记上一个访问的节点        while (p || !stk.empty()) {            while (p) {                stk.push(p);                p = p-&gt;left;            }            p = stk.top();            // 右儿子是空 或 这已经访问过右儿子了 说明可以访问当前这个根节点了（③）            if (!p-&gt;right || p-&gt;right == prev) {                ans.push_back(p-&gt;val);   // 后序遍历 ③                stk.pop();                prev = p;  // 标记已访问                p = nullptr;  // 用于回溯到上一级            } else {                p = p-&gt;right;  // 递归访问右子树            }        }        return ans;    }</code></pre><h2 id="传统方法"><a href="#传统方法" class="headerlink" title="传统方法"></a>传统方法</h2><p>（N叉树也适用， N叉树没有中序遍历）</p><h3 id="前序遍历（根-左-右）"><a href="#前序遍历（根-左-右）" class="headerlink" title="前序遍历（根 左 右）"></a>前序遍历（根 左 右）</h3><pre><code class="lang-c++">vector&lt;int&gt; preorderTraversal(TreeNode* root) {    vector&lt;int&gt; ans;    if (!root) return ans;    stack&lt;TreeNode*&gt; stk;    stk.push(root);    while (!stk.empty()) {        auto t = stk.top(); stk.pop();        ans.push_back(t-&gt;val); // 输出根        // 根 stack(右 左) == 根 左 右        // 右子树先压栈，等左子树都访问完再访问右子树        if (t-&gt;right) stk.push(t-&gt;right);         if (t-&gt;left) stk.push(t-&gt;left);    }    return ans;}</code></pre><h3 id="中序遍历（左-根-右）"><a href="#中序遍历（左-根-右）" class="headerlink" title="中序遍历（左 根 右）"></a>中序遍历（左 根 右）</h3><pre><code class="lang-c++">vector&lt;int&gt; inorderTraversal(TreeNode* root) {    vector&lt;int&gt; ans;    stack&lt;TreeNode*&gt; stk;    auto p = root;    while (p || !stk.empty()) {        while (p) {  // 让p走到最左边的节点            stk.push(p); // 路上的结点根, 等子树的左边(以及其子树)访问完在访问，所以压到栈中            p = p-&gt;left;        }        // p最左边的节点        p = stk.top(), stk.pop();        ans.push_back(p-&gt;val);  // 中序遍历 ②        p = p-&gt;right;  // 对其右子树遍历    }    return ans;}</code></pre><h3 id="后序遍历-（左-右-根）"><a href="#后序遍历-（左-右-根）" class="headerlink" title="后序遍历 （左 右 根）"></a>后序遍历 （左 右 根）</h3><ul><li>（左 右 根） 反过来就是 （根 右 左）</li><li>先用类似前序遍历（根 左 右）变成 （根 右 左）的方法遍历， 然后把答案逆置</li></ul><pre><code class="lang-c++">vector&lt;int&gt; postorderTraversal(TreeNode* root) {    vector&lt;int&gt; ans;    if (!root) return ans;    stack&lt;TreeNode*&gt; stk;    stk.push(root);    while (!stk.empty()) {        auto t = stk.top(); stk.pop();        ans.push_back(t-&gt;val);        // 根 右 左        // 先把 左子树压栈，等右子树都访问完在访问        if (t-&gt;left) stk.push(t-&gt;left);        if (t-&gt;right) stk.push(t-&gt;right);    }    reverse(ans.begin(), ans.end());    return ans;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>树</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>单调队列</title>
+    <link href="/2019/02/20/%E5%8D%95%E8%B0%83%E9%98%9F%E5%88%97/"/>
+    <url>/2019/02/20/%E5%8D%95%E8%B0%83%E9%98%9F%E5%88%97/</url>
+    
+    <content type="html"><![CDATA[<h1 id="单调队列"><a href="#单调队列" class="headerlink" title="单调队列"></a>单调队列</h1><h3 id="算法思想："><a href="#算法思想：" class="headerlink" title="算法思想："></a>算法思想：</h3><ul><li>维护一个具有<strong>单调性质的双端队列</strong>（头尾均可添加删除）， 因为有一些答案永远不会成为答案，所以把其覆盖掉，并使得队列单调， 即可以使用单调队列。 </li></ul><h3 id="经典例题"><a href="#经典例题" class="headerlink" title="经典例题"></a>经典例题</h3><h4 id="滑动窗口最小值和最大值"><a href="#滑动窗口最小值和最大值" class="headerlink" title="滑动窗口最小值和最大值"></a><a href="https://www.acwing.com/problem/content/156/" target="_blank" rel="noopener">滑动窗口最小值和最大值</a></h4><ul><li><p>以最大值为例（最小值同理）</p><p>对于每一个滑动窗口而言，若来了一个新进来的数字，这个数字若都大于等于之前的数，说明之前的数都不可能是答案，因为新加进来的元素已经比他们大，所以不可能是答案。</p><pre><code class="lang-c++">deque&lt;int&gt; q;  // 存放下标// 枚举以每个结束的区间[0, i]for (int i = 0; i &lt; n; i++) {    // 判断队头是否已经被划出窗口    if (!q.empty() &amp;&amp; i - k + 1 &gt; q.front()) q.pop_front();    // 维护单调队列，把小于当前数的所有下标尾出队    while (!q.empty() &amp;&amp; nums[q.back()] &lt;= nums[i]) q.pop_back();    q.push_back(i);     if (i &gt;= k - 1) printf(&quot;%d &quot;, nums[q.front()]);  // [0,k-1]才是第一个区间，开始记录答案}</code></pre></li></ul><h4 id="面试题59-II-队列的最大值"><a href="#面试题59-II-队列的最大值" class="headerlink" title="面试题59 - II. 队列的最大值"></a><a href="https://leetcode-cn.com/problems/dui-lie-de-zui-da-zhi-lcof/" target="_blank" rel="noopener">面试题59 - II. 队列的最大值</a></h4><pre><code class="lang-c++">class MaxQueue {private:    queue&lt;int&gt; q;    deque&lt;int&gt; help;public:    MaxQueue() {}    int max_value() {        return help.empty() ? -1 : help.front();    }    void push_back(int value) {        q.push(value);        while (!help.empty() &amp;&amp; help.back() &lt; value) help.pop_back();        help.push_back(value);    }    int pop_front() {        if (q.empty()) return -1;        int x = q.front(); q.pop();        if (x == help.front()) help.pop_front();        return x;    }};</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>数据结构</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>层次遍历</title>
+    <link href="/2019/02/20/%E5%B1%82%E6%AC%A1%E9%81%8D%E5%8E%86/"/>
+    <url>/2019/02/20/%E5%B1%82%E6%AC%A1%E9%81%8D%E5%8E%86/</url>
+    
+    <content type="html"><![CDATA[<h1 id="二叉树层次遍历模板"><a href="#二叉树层次遍历模板" class="headerlink" title="二叉树层次遍历模板"></a>二叉树层次遍历模板</h1><h3 id="模板一：以每层为单位操作"><a href="#模板一：以每层为单位操作" class="headerlink" title="模板一：以每层为单位操作"></a>模板一：以每层为单位操作</h3><pre><code class="lang-c++">vector&lt;vector&lt;int&gt;&gt; levelOrder(TreeNode* root) {    vector&lt;vector&lt;int&gt;&gt; ans;    if (!root) return ans;    queue&lt;TreeNode*&gt; q;    q.push(root);    while (!q.empty()) {        int siz = q.size();  // 记录当前层有多少个节点        vector&lt;int&gt; level;        for (int i = 0; i &lt; siz; i++) {  // 让当前层的节点出队， 把下一层的节点放入队列中            auto t = q.front(); q.pop();            level.push_back(t-&gt;val);            if (t-&gt;left) q.push(t-&gt;left);            if (t-&gt;right) q.push(t-&gt;right);        }        ans.push_back(level);    }    return ans;}</code></pre><h3 id="模板二：以每个节点为单位，使用pair放入队列记录层数"><a href="#模板二：以每个节点为单位，使用pair放入队列记录层数" class="headerlink" title="模板二：以每个节点为单位，使用pair放入队列记录层数"></a>模板二：以每个节点为单位，使用pair放入队列记录层数</h3><pre><code class="lang-c++">vector&lt;vector&lt;int&gt;&gt; levelOrder(TreeNode* root) {    vector&lt;vector&lt;int&gt;&gt; ans;    if (!root) return ans;    queue&lt;PTI&gt; q;    q.push({root, 0});    while (!q.empty()) {        auto t = q.front(); q.pop();        TreeNode *p = t.first;        int level = t.second;        // 把下一层新建出来  记得不能写成ans.size() - 1 &lt; level。 要写成 (int)ans.size() - 1 &lt; level        if (ans.size() &lt; level + 1)  ans.push_back(vector&lt;int&gt;());        ans[level].push_back(p-&gt;val);        if (p-&gt;left) q.push({p-&gt;left, level + 1});        if (p-&gt;right) q.push({p-&gt;right, level + 1});    }    return ans;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>树</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>单调栈</title>
+    <link href="/2019/02/05/%E5%8D%95%E8%B0%83%E6%A0%88/"/>
+    <url>/2019/02/05/%E5%8D%95%E8%B0%83%E6%A0%88/</url>
+    
+    <content type="html"><![CDATA[<h1 id="单调栈"><a href="#单调栈" class="headerlink" title="单调栈"></a>单调栈</h1><h3 id="算法思想："><a href="#算法思想：" class="headerlink" title="算法思想："></a>算法思想：</h3><ul><li>维护一个具有<strong>单调性质的栈</strong>， 因为有一些答案永远不会成为答案，所以把其覆盖掉，并使得栈单调， 即可以使用单调栈。</li></ul><h3 id="经典例题"><a href="#经典例题" class="headerlink" title="经典例题"></a>经典例题</h3><h4 id="单调栈-1"><a href="#单调栈-1" class="headerlink" title="单调栈"></a><a href="https://www.acwing.com/problem/content/832/" target="_blank" rel="noopener">单调栈</a></h4><ul><li>只要当数小于等于栈顶元素， 则栈顶元素不可能是答案， 因为当前数比栈顶元素小。所以出栈出到第一个比当前数小的数为止，该数为第一个比当前nums[i]小的数。记得把nums[i]插入栈顶作为新的一轮。</li></ul><pre><code class="lang-c++">for (int i = 0; i &lt; n; i++) {    while (!stk.empty() &amp;&amp; nums[i] &lt;= stk.top()) {        stk.pop();    }    if (stk.empty()) {   // 左边没有比他小的元素        printf(&quot;-1 &quot;);    } else {   // 栈顶元素是第一个比他小的数        printf(&quot;%d &quot;, stk.top());    }    stk.push(nums[i]);}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>数据结构</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>拓扑排序</title>
+    <link href="/2019/02/05/%E6%8B%93%E6%89%91%E6%8E%92%E5%BA%8F/"/>
+    <url>/2019/02/05/%E6%8B%93%E6%89%91%E6%8E%92%E5%BA%8F/</url>
+    
+    <content type="html"><![CDATA[<h1 id="拓扑排序"><a href="#拓扑排序" class="headerlink" title="拓扑排序"></a>拓扑排序</h1><h3 id="算法思想：bfs"><a href="#算法思想：bfs" class="headerlink" title="算法思想：bfs"></a>算法思想：bfs</h3><ul><li>把所有入度为0的点全部放入队列。</li><li>只要有入度为0的节点（队列不为空）则把该点输出，并把以该点t为入度的所有节点的入度减一。</li><li>把每个入度被减成0的节点放入队列</li></ul><pre><code class="lang-c++">/*     n 节点个数，下标从1开始    graph 邻接表    inD 每个节点的入度    ans 保存拓扑序*/bool topsort() {    queue&lt;int&gt; q;    for (int i = 1; i &lt;= n; i++) // 把所有入度为0的点全部加进队列        if (inD[i] == 0)            q.push(i);    while (!q.empty()) {        int t = q.front(); q.pop();  // 拿一个入度为0的点        ans.push_back(t);        for (int v : graph[t])  // 把以该点t为入度的点的入度减一            if (--inD[v] == 0)                 q.push(v);  // 若减成0，则入队    }    return ans.size() == n;  // 若全部节点都被访问才说明有 拓扑序}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>图论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>数论</title>
+    <link href="/2019/02/04/%E6%95%B0%E8%AE%BA%E6%80%BB%E7%BB%93/"/>
+    <url>/2019/02/04/%E6%95%B0%E8%AE%BA%E6%80%BB%E7%BB%93/</url>
+    
+    <content type="html"><![CDATA[<h1 id="数论"><a href="#数论" class="headerlink" title="数论"></a>数论</h1><h2 id="快速幂"><a href="#快速幂" class="headerlink" title="快速幂"></a>快速幂</h2><p>库函数： <code>res = pow(x, n)</code> </p><pre><code class="lang-c++">// n 不能是INT_MIN, 因为负数转成正数做会溢出，要单独判断double pow(double x, int n) {    if (n &lt; 0) n = -n, x = 1/x;    double res = 1, t = x;    while (n) {        if (n &amp; 1) res *= t;        t *= t;        n &gt;&gt;= 1;    }    return res;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>数论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>二分</title>
+    <link href="/2019/02/03/%E4%BA%8C%E5%88%86/"/>
+    <url>/2019/02/03/%E4%BA%8C%E5%88%86/</url>
+    
+    <content type="html"><![CDATA[<h2 id="整数二分"><a href="#整数二分" class="headerlink" title="整数二分"></a>整数二分</h2><h3 id="模板"><a href="#模板" class="headerlink" title="模板"></a>模板</h3><ul><li>主要看枚举哪一个点，根据这个点的性质到底使用哪个模板(右边的第一个点, 或左边的最后一个点)</li><li>二分的本质是左边满足一个性质，右边满足一个性质，就可以二分</li><li>看到是l = mid就要向上取整，即l + r + 1 &gt;&gt; 1</li></ul><pre><code class="lang-c++">bool check(int x) {/* ... */} // 检查x是否满足某种性质// ! 找性质在右半边的第一个点 !// 区间[l, r]被划分成[l, mid]和[mid + 1, r]时使用：(向下取整) int bsearch_1(int l, int r){    while (l &lt; r)    {        int mid = l + r &gt;&gt; 1;        if (check(mid)) r = mid;    // check()判断mid是否满足性质        else l = mid + 1;    }    return l;}// ! 找性质在左半边的最后一个点 !// 区间[l, r]被划分成[l, mid - 1]和[mid, r]时使用： (向上取整)int bsearch_2(int l, int r){    while (l &lt; r)    {        int mid = l + r + 1 &gt;&gt; 1;        if (check(mid)) l = mid;        else r = mid - 1;    }    return l;}</code></pre><h3 id="经典例题"><a href="#经典例题" class="headerlink" title="经典例题"></a>经典例题</h3><h5 id="数的范围"><a href="#数的范围" class="headerlink" title="数的范围"></a><a href="https://www.acwing.com/problem/content/791/" target="_blank" rel="noopener">数的范围</a></h5><pre><code class="lang-c++">int l = 0, r = n - 1;  // 从 [0, n-1]的范围二分while (l &lt; r) {    int mid = l + r &gt;&gt; 1;    if (a[mid] &gt;= k) r = mid;   // 找第一个大于等于k的位置    else l = mid + 1;}if (a[l] != k) {   // 找不到的情况返回 -1 -1    printf(&quot;-1 -1\n&quot;);    continue;}printf(&quot;%d &quot;, l);  // 得到第一个答案r = n - 1;   // 从[第一个大于等于k的位置, n - 1]while (l &lt; r) {    int mid = l + r + 1&gt;&gt; 1;    if (a[mid] &lt;= k) l = mid;   // 找最后一个小于等于k的位置    else r = mid - 1;}printf(&quot;%d\n&quot;, l);</code></pre><h2 id="浮点数二分"><a href="#浮点数二分" class="headerlink" title="浮点数二分"></a>浮点数二分</h2><h3 id="模板-1"><a href="#模板-1" class="headerlink" title="模板"></a>模板</h3><pre><code class="lang-c++">bool check(double x) {/* ... */} // 检查x是否满足某种性质double bsearch_3(double l, double r){    const double eps = 1e-6;   // eps 表示精度，取决于题目对精度的要求 一般比题目高两个数量级    while (r - l &gt; eps)    {        double mid = (l + r) / 2;        if (check(mid)) r = mid;        else l = mid;    }    return l;}</code></pre><h3 id="经典例题-1"><a href="#经典例题-1" class="headerlink" title="经典例题"></a>经典例题</h3><h5 id="数的三次方根"><a href="#数的三次方根" class="headerlink" title="数的三次方根"></a><a href="https://www.acwing.com/problem/content/792/" target="_blank" rel="noopener">数的三次方根</a></h5><pre><code class="lang-c++">double l = -10000, r = 10000;while (r - l &gt;= 1e-7) {    double mid = (l + r) / 2;    if (mid * mid * mid &gt;= n) r = mid;    else l = mid;}printf(&quot;%.6lf&quot;, l);</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>位运算</title>
+    <link href="/2019/02/03/%E4%BD%8D%E8%BF%90%E7%AE%97/"/>
+    <url>/2019/02/03/%E4%BD%8D%E8%BF%90%E7%AE%97/</url>
+    
+    <content type="html"><![CDATA[<h1 id="位运算"><a href="#位运算" class="headerlink" title="位运算"></a>位运算</h1><p><code>1 &lt;&lt; n</code> 2的n次方</p><h2 id="模板"><a href="#模板" class="headerlink" title="模板"></a>模板</h2><pre><code class="lang-c++">// 求n的第k位数字: n &gt;&gt; k &amp; 1// 返回n的最后一位1：（就是n的二进制表示最后一个1出现的位置是1， 其余位置都是0）int lowbit(int n) {    return n &amp; -n;}</code></pre><h2 id="经典例题"><a href="#经典例题" class="headerlink" title="经典例题"></a>经典例题</h2><h4 id="位1的个数"><a href="#位1的个数" class="headerlink" title="位1的个数"></a><a href="https://leetcode-cn.com/problems/number-of-1-bits/" target="_blank" rel="noopener">位1的个数</a></h4><ul><li>让n减lowbit操作的数（每次减掉了最末尾的1）， 减了多少次到0， 就是多少个1.</li></ul><pre><code class="lang-c++">class Solution {public:    uint32_t lowbit(uint32_t n) {        return n &amp; -n;    }    int hammingWeight(uint32_t n) {        int ans = 0;        for (uint32_t i = n; i != 0; i -= lowbit(i)) {            ans++;        }        return ans;    }};</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>前缀和 &amp; 差分</title>
+    <link href="/2019/02/03/%E5%89%8D%E7%BC%80%E5%92%8C&amp;%E5%B7%AE%E5%88%86/"/>
+    <url>/2019/02/03/%E5%89%8D%E7%BC%80%E5%92%8C&amp;%E5%B7%AE%E5%88%86/</url>
+    
+    <content type="html"><![CDATA[<h1 id="前缀和-amp-差分"><a href="#前缀和-amp-差分" class="headerlink" title="前缀和 &amp; 差分"></a>前缀和 &amp; 差分</h1><h2 id="前缀和"><a href="#前缀和" class="headerlink" title="前缀和"></a>前缀和</h2><h3 id="模板"><a href="#模板" class="headerlink" title="模板"></a>模板</h3><h4 id="一维"><a href="#一维" class="headerlink" title="一维"></a>一维</h4><ul><li>s[i] 表示前i个数<code>[0, i)</code>的累加和。 下标从1开始。 (s[0] == 0) dp的边界， 可以少些判断</li><li>前缀和数组<code>s</code>下标从1开始， 原数组<code>nums</code>下标从0开始</li></ul><pre><code class="lang-c++">// s[0] = 0for (int i = 1; i &lt;= n; i++) {    s[i] = s[i-1] + nums[i-1];}// l, r是指原数组下标区间// s[r+1]: [0, r]       0, 1, ..., l-1 , l, ..., r// s[l]  : [0, l-1]     0, 1, ..., l-1 , // 相减                       [l, r]的和 ：l, ..., r                 int l_to_r_sum = s[r+1] - s[l];</code></pre><h4 id="二维"><a href="#二维" class="headerlink" title="二维"></a>二维</h4><pre><code class="lang-c++">// s下标从1开始（第0行和第0列都置成0）， mat下标从0开始// 算前缀和for (int i = 1; i &lt;= n; i++) {    for (int j = 1; j &lt;= m; j++) {        s[i][j] = s[i-1][j] + s[i][j-1] - s[i-1][j-1] + mat[i-1][j-1];    }}// (x1, y1) 为左上角， (x2, y2)为右上角. 坐标对应原数组下标。 下标偏移了1int sum = s[x2+1][y2+1] - s[x1][y2+1] - s[x2+1][y1] + s[x1][y1];</code></pre><h2 id="差分"><a href="#差分" class="headerlink" title="差分"></a>差分</h2><h3 id="模板-1"><a href="#模板-1" class="headerlink" title="模板"></a>模板</h3><h4 id="一维-1"><a href="#一维-1" class="headerlink" title="一维"></a>一维</h4><ul><li>所求数组s（下标从0开始）为一个数组的前缀和数组， 处前把其变成下标从1开始，让<code>s[0] == 0</code></li><li>求出原数组<code>nums</code></li><li>把原数组还原成s数组， 根据题目需要是否把s数组改回成下标从0开始</li></ul><pre><code class="lang-c++">// 让s[0] == 0for (int i = 1; i &lt;= n; i++) {    nums[i-1] = s[i] - s[i-1];   // 前缀和的逆运算 s[i] = s[i-1] + nums[i-1]}// 区间[l, r]增加一个数c ， l, r是从0开始的下标nums[l] += c;   //等价对应s数组 l... r, r+1, ..., n-1 全部增加了cnums[r+1] -= c; //等价对应s数组         r+1, ..., n-1 全部减少c                // s数组 [l, r] 增加了cfor (int i = 1; i &lt;= n; i++) {    s[i] = s[i-1] + nums[i-1]}// 再把s数字变成以0为下标// remove first item in array of s</code></pre><h4 id="二维-1"><a href="#二维-1" class="headerlink" title="二维"></a>二维</h4><pre><code class="lang-c++">// s原数组变成下标从1开始， 原来从0开始，（第0行和第0列都置成0）// 算差分数组mat， 下标从0开始， 但是mat数组也要开多一维for (int i = 1; i &lt;= n; i++) {    for (int j = 1; j &lt;= m; j++) {        mat[i-1][j-1] = s[i][j] - s[i-1][j] - s[i][j-1] + s[i-1][j-1];    }}mat[x1][y1] += c;mat[x2+1][y1] -= c;mat[x1][y2+1] -= c;mat[x2+1][y2+1] += c;  // 可能越界， 所以要开多一维，最后一行和最后一列都为0for (int i = 1; i &lt;= n; i++) {    for (int j = 1; j &lt;= m; j++) {        s[i][j] = s[i-1][j] + s[i][j-1] - s[i-1][j-1] + mat[i-1][j-1];    }}// 还原s数组从0坐标开始</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>区间合并</title>
+    <link href="/2019/02/03/%E5%8C%BA%E9%97%B4%E5%90%88%E5%B9%B6/"/>
+    <url>/2019/02/03/%E5%8C%BA%E9%97%B4%E5%90%88%E5%B9%B6/</url>
+    
+    <content type="html"><![CDATA[<h1 id="区间合并"><a href="#区间合并" class="headerlink" title="区间合并"></a>区间合并</h1><h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><h4 id="合并区间"><a href="#合并区间" class="headerlink" title="合并区间"></a><a href="https://leetcode-cn.com/problems/merge-intervals/" target="_blank" rel="noopener">合并区间</a></h4><p> 思路：</p><ol><li><p>先对区间的左端点进行排序。</p></li><li><p>如果上一个区间的右端点 大于等于 当前区间的左端点， 则合并两个区间；否则，当前区间作为一个新的区间加入新区间。</p></li></ol><ul><li>新建一个数组保存区间</li></ul><pre><code class="lang-c++">class Solution {public:    vector&lt;vector&lt;int&gt;&gt; merge(vector&lt;vector&lt;int&gt;&gt;&amp; intervals) {        vector&lt;vector&lt;int&gt;&gt; ans;        if (intervals.size() &lt;= 1) {            ans = intervals;            return ans;        }        sort(intervals.begin(), intervals.end());        ans.push_back(intervals[0]);        for (int i = 1; i &lt; intervals.size(); i++) {            auto &amp;pre = ans.back();            auto cur = intervals[i];            if (pre[1] &gt;= cur[0]) {                 pre[1] = max(pre[1], cur[1]);            } else {                ans.push_back({cur});            }        }        return ans;    }};</code></pre><ul><li>原地</li></ul><pre><code class="lang-c++">class Solution {public:    vector&lt;vector&lt;int&gt;&gt; merge(vector&lt;vector&lt;int&gt;&gt;&amp; intervals) {        if (intervals.size() &lt;= 1) return intervals;        sort(intervals.begin(), intervals.end());        int cnt = 0;  // 当前区间的位置        for (int i = 1; i &lt; intervals.size(); i++) {            auto &amp;pre = intervals[cnt];            auto &amp;cur = intervals[i];            if (pre[1] &gt;= cur[0]) {                pre[1] = max(pre[1], cur[1]);            } else {                intervals[++cnt] = cur;            }        }        // 把后面多出来的删掉        int deleteTime = intervals.size() - 1 - cnt;        while (deleteTime--) intervals.pop_back();        return intervals;    }};</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>双指针</title>
+    <link href="/2019/02/03/%E5%8F%8C%E6%8C%87%E9%92%88/"/>
+    <url>/2019/02/03/%E5%8F%8C%E6%8C%87%E9%92%88/</url>
+    
+    <content type="html"><![CDATA[<h1 id="双指针"><a href="#双指针" class="headerlink" title="双指针"></a>双指针</h1><ul><li>双指针的核心：将上一状态指针所表达的信息传递至下一状态，从而减少无谓的搜索。</li><li>一般尾指针是add，头指针是remove</li><li>一般提问求<strong>子串</strong>（连续区间）的<strong>最长、最短、数量</strong></li></ul><h2 id="模板"><a href="#模板" class="headerlink" title="模板"></a>模板</h2><ul><li><p>对于一个序列，用两个指针维护一段区间(滑动窗口)， 可以相互转换。 <strong>（一般）判断最大的时候while里面</strong>。有边界情况的时候两个模板可以换着写，可能边界就会消失了。本人比较喜欢固定头</p><ul><li><p>固定尾指针:   i是新的尾指针， j是头指针 （移动的途中，即while循环中是满足条件的）</p><pre><code class="lang-c++">int j = 0;for (int i = 0; i &lt; n; i++) {    // add可能对i进行操作，因为i这个元素要被加入窗口    while (j &lt;= i &amp;&amp; check1()) j++;  // remove， 里面都是满足check的区间    // 第一个不满足check性质的区间}</code></pre></li><li><p>固定头指针， 一般来说两个check是相反的， 即<code>check1 == !check2</code></p><pre><code class="lang-c++">int j = 0;for (int i = 0; i &lt; n; i++) {  while (j &lt; n &amp;&amp; check2()) j++;  // add，里面都是满足check2的区间    if (!check2())  // 第一个不满足check2性质的区间. (只要j没有越界，但是j &lt;= n,因为j++了，不能写j&lt;=n会多出解)    // 可能对i进行操作，因为下一层循环i这个位置的元素要被移出窗口 remove}</code></pre></li></ul></li></ul><ul><li><p>对于两个序列，维护某种次序，比如一头一尾有序数组找和. 或归并排序中合并两个有序序列的操作</p><pre><code class="lang-c++">// 固定左指针for (int l = 0, r = n - 1; l &lt; r; l++) {    while (r &gt;= l &amp;&amp; check()) r--; }// 全局考虑，每次区间缩小int l = 0, r = n - 1;while (l &lt; r) {    /* 若找到满足性质的区间           返回这个区间                  若没找到：           每一次 l++ 或 r--;           每一次区间减少1            */}</code></pre></li></ul><h2 id="双指针经典题"><a href="#双指针经典题" class="headerlink" title="双指针经典题"></a>双指针经典题</h2><h4 id="167-两数之和-II-输入有序数组"><a href="#167-两数之和-II-输入有序数组" class="headerlink" title="167. 两数之和 II - 输入有序数组"></a><a href="https://leetcode-cn.com/problems/two-sum-ii-input-array-is-sorted/" target="_blank" rel="noopener">167. 两数之和 II - 输入有序数组</a></h4><ul><li>对于每一个较小的数下标i， 看离l最近的较大的数的下标j可以到哪里。较大的数具有单调性</li><li><p>这题同理在两个有序数组中找等于target的数， 也可以用这种方法</p><pre><code class="lang-c++">  // 模板一  vector&lt;int&gt; twoSum(vector&lt;int&gt;&amp; numbers, int target) {      int n = numbers.size();      for (int i = 0, j = n - 1; i &lt; r; i++) {  // 枚举每一个较小的数字          while (j &gt;= i &amp;&amp; numbers[i] + numbers[j] &gt; target) j--;          if (numbers[i] + numbers[j] == target) return {i + 1, j + 1};      }      return {};  }  // 模板二  vector&lt;int&gt; twoSum(vector&lt;int&gt;&amp; numbers, int target) {      int n = numbers.size();      int l = 0, r = n - 1;      while (l &lt; r) {          int sum = numbers[l] + numbers[r];          if (sum == target) {              return {l + 1, r + 1};  // 下标从1开始          }          if (sum &gt; target) r--;          else l++;      }      return {};  }</code></pre></li></ul><h4 id="15-三数之和"><a href="#15-三数之和" class="headerlink" title="15. 三数之和"></a><a href="https://leetcode-cn.com/problems/3sum/" target="_blank" rel="noopener">15. 三数之和</a></h4><p>去重比较麻烦</p><ul><li>枚举i相同的时候需要去重</li><li>双指针找到一个解的时候需要去重</li></ul><pre><code class="lang-c++">// 模板一class Solution {public:    vector&lt;vector&lt;int&gt;&gt; threeSum(vector&lt;int&gt;&amp; nums) {        vector&lt;vector&lt;int&gt;&gt; ans;        if (nums.size() &lt; 3) return ans;        int n = nums.size();        sort(nums.begin(), nums.end());        for (int i = 0; i &lt; n - 2; i++) {            if (nums[i] &gt; 0) break;   // 剪枝            if (i - 1 &gt;= 0 &amp;&amp; nums[i] == nums[i-1]) continue;  // 去重            int target = -nums[i];            for (int l = i + 1, r = n - 1; l &lt; r; l++) {                while (r &gt; l &amp;&amp; nums[l] + nums[r] &gt; target) r--;                if (r == l) break;   // !!!                int sum = nums[l] + nums[r];                if (sum == target) {                    ans.push_back({nums[i], nums[l], nums[r]});                    while (l &lt; r &amp;&amp; nums[l] == nums[l+1]) l++;  // 去重                    while (l &lt; r &amp;&amp; nums[r] == nums[r-1]) r--;  // 去重                    r--;                }            }        }        return ans;    }};</code></pre><pre><code class="lang-c++">// 模板二class Solution {public:    vector&lt;vector&lt;int&gt;&gt; threeSum(vector&lt;int&gt;&amp; nums) {        vector&lt;vector&lt;int&gt;&gt; ans;        if (nums.size() &lt; 3) return ans;        int n = nums.size();        sort(nums.begin(), nums.end());        for (int i = 0; i &lt; n - 2; i++) {            if (nums[i] &gt; 0) break;  // 后面不用再找了            if (i - 1 &gt;= 0 &amp;&amp; nums[i] == nums[i-1]) continue; // 去重            // 双指针算法            int target = -nums[i];  // 再后面有序的序列找target            int l = i + 1, r = n - 1;            while (l &lt; r) {                int sum = nums[l] + nums[r];                if (sum &gt; target) {                    r--;                } else if (sum &lt; target) {                    l++;                } else {                    ans.push_back({nums[i], nums[l], nums[r]});                    while (l &lt; r &amp;&amp; nums[l] == nums[l+1]) l++; // 去重                    while (l &lt; r &amp;&amp; nums[r] == nums[r-1]) r--; // 去重                    l++;                    r--;                }            }        }        return ans;    }};</code></pre><h2 id="Hash表-滑动窗口"><a href="#Hash表-滑动窗口" class="headerlink" title="Hash表 + 滑动窗口"></a>Hash表 + 滑动窗口</h2><h4 id="76-最小覆盖子串"><a href="#76-最小覆盖子串" class="headerlink" title="76. 最小覆盖子串"></a><a href="https://leetcode-cn.com/problems/minimum-window-substring/" target="_blank" rel="noopener">76. 最小覆盖子串</a></h4><ul><li><p>通过维护一个滑动串口，找到最小覆盖的子串。</p></li><li><p>判断所有t字符中的数字是否在hash中，技巧：</p><ul><li><p>把t的所有字符统计个数，用一个变量rest表示还剩多少字符没有匹配，若<code>rest == 0</code>说明所有字符已经匹配完成（即0个字符没有匹配）. <strong>counts[c]为正的时候说明还需要多少c， counts[c]为负的时候说明多出来了多少c。</strong></p></li><li><p>每次添加则使用<code>if (counts.count(s[i]) &amp;&amp; --counts[s[i]] == 0) rest--;</code> ， 删除则使用 <code>if (counts.count(s[j]) &amp;&amp; counts[s[j]]++ == 0) rest++;</code> 。</p><p>PS: rest可以理解为开关，分界线是<code>counts[c] == 0</code>的时候，刚超过0，就还需要c字符。 刚减小到0的时候，c字符就够了。</p></li></ul></li></ul><pre><code class="lang-c++">// 固定尾class Solution {public:    string minWindow(string s, string t) {        if (t.empty() || s.empty() || t.length() &gt; s.length()) return &quot;&quot;;        int n = s.length(), rest = 0, j = 0, start = -1, len = n + 1;        unordered_map&lt;char, int&gt; counts;        for (char c : t) counts[c]++;        rest = counts.size();        for (int i = 0; i &lt; n; i++) {            if (counts.count(s[i]) &amp;&amp; --counts[s[i]] == 0) rest--;            while (rest == 0) {                if (i - j + 1 &lt;= len) start = j, len = i - j + 1;  // 推荐                if (counts.count(s[j]) &amp;&amp; counts[s[j]]++ == 0) rest++;                j++;            }        }        if (start == -1) return &quot;&quot;;        return s.substr(start, len);    }};</code></pre><pre><code class="lang-c++">// 固定头class Solution {public:    string minWindow(string s, string t) {        if (t.empty() || s.empty() || t.length() &gt; s.length()) return &quot;&quot;;        int n = s.length(), rest = 0, j = 0, start = -1, len = n + 1;        unordered_map&lt;char, int&gt; counts;        for (char c : t) counts[c]++;        rest = counts.size();        for (int i = 0; i &lt; n; i++) {            while (j &lt; n &amp;&amp; rest &gt; 0) {                if (counts.count(s[j]) &amp;&amp; --counts[s[j]] == 0) rest--;                j++;            }            if (rest == 0 &amp;&amp; len &gt; j - i) start = i, len = j - i;            if (counts.count(s[i]) &amp;&amp; counts[s[i]]++ == 0) rest++;        }        if (start == -1) return &quot;&quot;;        return s.substr(start, len);    }};</code></pre><h4 id="438-找到字符串中所有字母异位词"><a href="#438-找到字符串中所有字母异位词" class="headerlink" title="438. 找到字符串中所有字母异位词"></a><a href="https://leetcode-cn.com/problems/find-all-anagrams-in-a-string/" target="_blank" rel="noopener">438. 找到字符串中所有字母异位词</a></h4><ul><li>通过滑动窗口找能够包含字符p，并且长度等于p的子串。</li></ul><pre><code class="lang-c++">// 固定尾class Solution {public:    vector&lt;int&gt; findAnagrams(string s, string p) {        if (p.empty() || s.empty() || s.length() &lt; p.length()) return {};        int n = s.length(), m = p.length(), j = 0, rest = 0;        vector&lt;int&gt; ans;        unordered_map&lt;char, int&gt; counts;        for (char c : p) counts[c]++;        rest = counts.size();        for (int i = 0; i &lt; n; i++) {            if (counts.count(s[i]) &amp;&amp; --counts[s[i]] == 0) rest--;            while (rest == 0) {                if (i - j + 1 == m) ans.push_back(j);  // 推荐                if (counts.count(s[j]) &amp;&amp; counts[s[j]]++ == 0) rest++;                j++;            }        }        return ans;    }};</code></pre><pre><code class="lang-c++">// 固定头class Solution {public:    vector&lt;int&gt; findAnagrams(string s, string p) {        if (p.empty() || s.empty() || s.length() &lt; p.length()) return {};        int n = s.length(), m = p.length(), j = 0, rest = 0;        vector&lt;int&gt; ans;        unordered_map&lt;char, int&gt; counts;        for (char c : p) counts[c]++;        rest = counts.size();        for (int i = 0; i &lt; n; i++) {            while (j &lt; n &amp;&amp; rest &gt; 0) {                if (counts.count(s[j]) &amp;&amp; --counts[s[j]] == 0) rest--;                j++;            }            if (rest == 0 &amp;&amp; j - i == m) ans.push_back(i);            if (counts.count(s[i]) &amp;&amp; counts[s[i]]++ == 0) rest++;        }        return ans;    }};</code></pre><h4 id="3-无重复字符的最长子串"><a href="#3-无重复字符的最长子串" class="headerlink" title="3. 无重复字符的最长子串"></a><a href="https://leetcode-cn.com/problems/longest-substring-without-repeating-characters/" target="_blank" rel="noopener">3. 无重复字符的最长子串</a></h4><ul><li>求最长的子串</li><li>枚举每个子串结尾， 看左端点最远可以到哪里。左端点具有单调性</li></ul><pre><code class="lang-c++">// 固定尾int lengthOfLongestSubstring(string s) {    if (s.empty()) return 0;    int n = s.length();    unordered_map&lt;char, int&gt; counts;    int j = 0, ans = 0;    for (int i = 0, j = 0; i &lt; n; i++) {        char cur = s[i];        counts[cur]++;        while (counts[cur] &gt; 1) {            counts[s[j]]--;            j++;        }        ans = max(ans, i - j + 1);    }    return ans;}</code></pre><pre><code class="lang-c++">// 固定头, 推荐，因为判断在while循环中int lengthOfLongestSubstring(string s) {    if (s.empty()) return 0;    int n = s.length();    unordered_map&lt;char, int&gt; counts;    int j = 0, ans = 0;    for (int i = 0; i &lt; n; i++) {        while (j &lt; n &amp;&amp; counts[s[j]] == 0) {            ans = max(ans, j - i + 1);   // 推荐            ++counts[s[j]];            ++j;        }        --counts[s[i]];    return ans;}</code></pre><h2 id="和至少为k的最短数组"><a href="#和至少为k的最短数组" class="headerlink" title="和至少为k的最短数组"></a>和至少为k的最短数组</h2><h4 id="209-长度最小的子数组"><a href="#209-长度最小的子数组" class="headerlink" title="209. 长度最小的子数组"></a><a href="https://leetcode-cn.com/problems/minimum-size-subarray-sum/" target="_blank" rel="noopener">209. 长度最小的子数组</a></h4><p>the ans is initialized as <code>ans = n + 1</code></p><p>One pass, remove the value from sum <code>s</code> by doing <code>s += nums[j]</code></p><p>if <code>s &lt;= 0</code>. It means the total sum of <code>nums[j] + ... + nums[i]</code>that we want.</p><p>Then we update the <code>ans = min(ans, i - j + 1)</code></p><p>Finally we return the answer <code>ans</code></p><pre><code class="lang-c++">// 固定尾指针写法class Solution {public:    int minSubArrayLen(int s, vector&lt;int&gt;&amp; nums) {        int j = 0, n = nums.size(), ans = n + 1;        for (int i = 0; i &lt; nums.size(); i++) {            s -= nums[i];            while (s &lt;= 0) {                ans = min(ans, i - j + 1);  // 推荐                s += nums[j++];            }        }        return ans % (n + 1);    }};</code></pre><pre><code class="lang-c++">// 固定头指针写法class Solution {public:    int minSubArrayLen(int s, vector&lt;int&gt;&amp; nums) {        int j = 0, n = nums.size(), ans = n + 1;        for (int i = 0; i &lt; nums.size(); i++) {            while (j &lt; n &amp;&amp; s &gt; 0) {                s -= nums[j++];            }            if (s &lt;= 0) ans = min(ans, j - i);            s += nums[i];        }        return ans % (n + 1);    }};</code></pre><h4 id="862-和至少为-K-的最短子数组"><a href="#862-和至少为-K-的最短子数组" class="headerlink" title="862. 和至少为 K 的最短子数组"></a><a href="https://leetcode-cn.com/problems/shortest-subarray-with-sum-at-least-k/" target="_blank" rel="noopener">862. 和至少为 K 的最短子数组</a></h4><h2 id="包含k个字符的最长子串"><a href="#包含k个字符的最长子串" class="headerlink" title="包含k个字符的最长子串"></a>包含k个字符的最长子串</h2><h4 id="340-至多包含-K-个不同字符的最长子串"><a href="#340-至多包含-K-个不同字符的最长子串" class="headerlink" title="340. 至多包含 K 个不同字符的最长子串"></a><a href="https://leetcode-cn.com/problems/longest-substring-with-at-most-k-distinct-characters/" target="_blank" rel="noopener">340. 至多包含 K 个不同字符的最长子串</a></h4><pre><code class="lang-c++">给定一个字符串 s ，找出 至多 包含 k 个不同字符的最长子串 T。输入: s = &quot;eceba&quot;, k = 2输出: 3解释: 则 T 为 &quot;ece&quot;，所以长度为 3。输入: s = &quot;aa&quot;, k = 1输出: 2解释: 则 T 为 &quot;aa&quot;，所以长度为 2。</code></pre><pre><code class="lang-c++">// 固定尾class Solution {public:    int lengthOfLongestSubstringKDistinct(string s, int k) {        if (s.empty()) return 0;        int n = s.length(), ans = 0, j = 0;        unordered_map&lt;char, int&gt; counts;        for (int i = 0; i &lt; n; i++) {            counts[s[i]]++;            while (counts.size() &gt; k) {                if (--counts[s[j]] == 0) counts.erase(s[j]);                j++;            }            ans = max(ans, i - j + 1);        }        return ans;    }};</code></pre><pre><code class="lang-c++">// 固定头class Solution {public:    int lengthOfLongestSubstringKDistinct(string s, int k) {        if (s.empty()) return 0;        int n = s.length(), ans = 0, j = 0;        unordered_map&lt;char, int&gt; counts;        for (int i = 0; i &lt; n; i++) {            while (j &lt; n &amp;&amp; counts.size() &lt;= k) {                // PS: [3,3,3,1,2,1,1,2,3,3,4] 易错                if (!counts.count(s[j]) &amp;&amp; counts.size() == k) break;                ans = max(ans, j - i + 1);                ++counts[s[j]];                j++;            }            if (--counts[s[i]] == 0) counts.erase(s[i]);        }        return ans;    }};</code></pre><h4 id="992-K-个不同整数的子数组"><a href="#992-K-个不同整数的子数组" class="headerlink" title="992. K 个不同整数的子数组"></a><a href="https://leetcode-cn.com/problems/subarrays-with-k-different-integers/" target="_blank" rel="noopener">992. K 个不同整数的子数组</a></h4><ul><li>转成atMost做</li></ul><pre><code class="lang-c++">class Solution {public:    int subarraysWithKDistinct(vector&lt;int&gt;&amp; A, int K) {        return atMost(A, K) - atMost(A, K-1);    }    int atMost(vector&lt;int&gt;&amp; A, int K) {        int n = A.size(), ans = 0, j = 0;        if (!n || K &lt;= 0 || K &gt; n) return 0;        unordered_map&lt;int, int&gt; counts;        for (int i = 0; i &lt; n; i++) {            while (j &lt; n &amp;&amp; counts.size() &lt;= K) {                if (counts.size() == K &amp;&amp; !counts.count(A[j])) break;                ans++;                counts[A[j]]++;                j++;            }            if (counts.size() &lt;= K) ans += j - i - 1;            if (--counts[A[i]] == 0) counts.erase(A[i]);        }        return ans;    }};</code></pre><h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><h4 id="1358-包含所有三种字符的子字符串数目"><a href="#1358-包含所有三种字符的子字符串数目" class="headerlink" title="1358. 包含所有三种字符的子字符串数目"></a><a href="https://leetcode-cn.com/problems/number-of-substrings-containing-all-three-characters/" target="_blank" rel="noopener">1358. 包含所有三种字符的子字符串数目</a></h4><pre><code class="lang-c++">// 固定尾class Solution {public:    int numberOfSubstrings(string s) {        int counts[3] = {0, 0, 0};        int j = 0, ans = 0, n = s.length();        for (int i = 0; i &lt; n; i++) {            counts[s[i]-&#39;a&#39;]++;            while (counts[0] &amp;&amp; counts[1] &amp;&amp; counts[2]) {                ans += n - i;                counts[s[j]-&#39;a&#39;]--;                j++;            }        }        return ans;    }};</code></pre><pre><code class="lang-c++">// 固定头class Solution {public:    int numberOfSubstrings(string s) {        int counts[3] = {0, 0, 0};        int j = 0, ans = 0, n = s.length();        for (int i = 0; i &lt; n; i++) {            while (j &lt; n &amp;&amp; (!counts[0] || !counts[1] || !counts[2])) {                counts[s[j]-&#39;a&#39;]++;                j++;            }            if (counts[0] &amp;&amp; counts[1] &amp;&amp; counts[2]) ans += n - j + 1;            counts[s[i]-&#39;a&#39;]--;        }        return ans;    }};</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>快速排序</title>
+    <link href="/2019/02/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/"/>
+    <url>/2019/02/01/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/</url>
+    
+    <content type="html"><![CDATA[<h1 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h1><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h4 id="快速排序-1"><a href="#快速排序-1" class="headerlink" title="快速排序"></a>快速排序</h4><p><code>均摊时间：O(nlogn) &amp; 空间：O(logn)</code></p><ul><li>在数组选一个数v(选中间的)，把数组左边变成<code>&lt;=v</code>，右边变成<code>&gt;=v</code>,使用分治的思想，分别对<strong>左边</strong>和<strong>右边</strong>进行快速排序</li><li>理论上最优的策略是以他的中位数来做为划分依据, 让其划分得均匀</li></ul><p><em>注意：partition返回的是j，而不是i。</em></p><p><strong>解释：</strong><br><code>partition</code> 返回j的原因：<br><code>partition</code>假如以中点向下取整(l + r &gt;&gt; 1), 只剩下两个数的时候(如 <code>1 2</code>) 就会以左边的<code>1</code>为基准值<code>x</code>，<code>i</code> 和 <code>j</code> 最后会cross over，因为是do while循环， <strong>i会到2的位置， j会到1的位置</strong>。 这样左边(l, j)是小于等于1， 右边(i, r)是大于等于1.这样不会死循环。<strong>若返回i就会发生划分的左边死循环，一直是(1, 2)划分，无限递归下去</strong>。</p><p>若要<code>返回i</code>， 跟二分很像，则需要以中点向上取整(<code>l + r + 1 &gt;&gt; 1</code>)。 同理，还是以数组剩下两个元素（1， 2）为例， 基准值x取2. 当i, j cross over之后， 左边小于等于2为(<code>l, i - 1</code>), 右边大于等于2为(<code>i， r</code>)。</p><p><strong>为什么写do while 循环, 尝试例子数组排序 <code>1 2 1</code> , 死循环. 因为交换完的时候就卡住了.</strong></p><ul><li>向下取整</li></ul><pre><code class="lang-c++">int partition(int a[], int l, int r) {    int x = a[l + r &gt;&gt; 1];   //  下取整    int i = l - 1, j = r + 1;    while (i &lt; j) {        do ++i; while (a[i] &lt; x);        do --j; while (a[j] &gt; x);        if (i &lt; j) swap(a[i], a[j]);    }    return j;    // 一定是j}void quick_sort(int a[], int l, int r) {    if (l &gt;= r) return;    int p = partition(a, l, r);    quick_sort(a, l, p);   // 划分区间    quick_sort(a, p + 1, r);}</code></pre><ul><li>向上取整</li></ul><pre><code class="lang-c++">int partition(int a[], int l, int r) {    int x = a[l + r + 1 &gt;&gt; 1];   // 上取整    int i = l - 1, j = r + 1;    while (i &lt; j) {        do ++i; while (a[i] &lt; x);        do --j; while (a[j] &gt; x);        if (i &lt; j) swap(a[i], a[j]);    }    return i;   // 一定是i}void quick_sort(int a[], int l, int r) {    if (l &gt;= r) return;    int p = partition(l, r);    quick_sort(l, p - 1);   // 划分区间    quick_sort(p, r);}</code></pre><h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><h3 id="第k小的数"><a href="#第k小的数" class="headerlink" title="第k小的数"></a>第k小的数</h3><p>在无序数组中找第k小的数字</p><pre><code class="lang-c++">int partition(int a[], int l, int r) {    int x = a[l + r &gt;&gt; 1];    int i = l - 1, j = r + 1;    while (i &lt; j) {        do i++; while (a[i] &lt; x);        do j--; while (a[j] &gt; x);        if (i &lt; j) swap(a[i], a[j]);    }    return j;}int quick_sort(int a[], int l, int r, int k) {    if (l == r) return a[l];    int p = partition(a, l, r);    int leftNum = p - l + 1;  // 左边比基准值小的个数    if (leftNum &gt;= k) return quick_sort(a, l, p, k);   // 从左边找第k个的数    return quick_sort(a, p + 1, r, k - leftNum);   // 从右边找第k - leftNum的数, 因为左边已经有leftNum个数了}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>归并排序</title>
+    <link href="/2019/02/01/%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/"/>
+    <url>/2019/02/01/%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</url>
+    
+    <content type="html"><![CDATA[<h1 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h1><h2 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h2><h4 id="归并排序-1"><a href="#归并排序-1" class="headerlink" title="归并排序"></a>归并排序</h4><p><code>均摊时间：O(nlogn) &amp; 空间：O(n)</code></p><pre><code class="lang-c++">// const int N = 100010;// int t[N];void merge(int a[], int l, int mid, int r) {    int cnt = 0;  // 新数组t的长度    int i = l, j = mid + 1;    while (i &lt;= mid &amp;&amp; j &lt;= r) {        t[cnt++] = a[i] &lt;= a[j] ? a[i++] : a[j++];    }    while (i &lt;= mid) t[cnt++] = a[i++];    while (j &lt;= r) t[cnt++] = a[j++];    for (int i = 0; i &lt; cnt; i++) a[l+i] = t[i];}void merge_sort(int a[], int l, int r) {    if (l &gt;= r) return;    int mid = l + r &gt;&gt; 1;    merge_sort(a, l, mid);   // 排序左半边    merge_sort(a, mid + 1, r);    // 排序右半边    merge(a, l, mid, r);   // 合并左半边和右半边}</code></pre><h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><h3 id="求逆序数"><a href="#求逆序数" class="headerlink" title="求逆序数"></a>求逆序数</h3><pre><code class="lang-c++"></code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>基础</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Java集合类总结</title>
+    <link href="/2018/12/19/Java%E9%9B%86%E5%90%88%E7%B1%BB%E6%80%BB%E7%BB%93/"/>
+    <url>/2018/12/19/Java%E9%9B%86%E5%90%88%E7%B1%BB%E6%80%BB%E7%BB%93/</url>
+    
+    <content type="html"><![CDATA[<h1 id="Java-刷题集合类"><a href="#Java-刷题集合类" class="headerlink" title="Java 刷题集合类"></a>Java 刷题集合类</h1><h2 id="快速查看"><a href="#快速查看" class="headerlink" title="快速查看"></a>快速查看</h2><div class="table-container"><table><thead><tr><th style="text-align:center">类</th><th style="text-align:center">方法</th></tr></thead><tbody><tr><td style="text-align:center">String</td><td style="text-align:center">charAt toCharArray split substring indexOf lastIndexOf replace length</td></tr><tr><td style="text-align:center">List</td><td style="text-align:center">add remove get size subList</td></tr><tr><td style="text-align:center">Stack</td><td style="text-align:center">push pop peek isEmpty size</td></tr><tr><td style="text-align:center">Queue</td><td style="text-align:center">offer poll peek isEmpty size</td></tr><tr><td style="text-align:center">PriorityQueue</td><td style="text-align:center">offer poll peek isEmpty size</td></tr><tr><td style="text-align:center">Set</td><td style="text-align:center">add remove contains isEmpty size first(TreeSet) last(TreeSet)</td></tr><tr><td style="text-align:center">Map</td><td style="text-align:center">put get getOrDefault containsKey containsValue keySet values isEmpty size</td></tr></tbody></table></div><h2 id="静态数组-Static-Array"><a href="#静态数组-Static-Array" class="headerlink" title="静态数组 Static Array"></a>静态数组 Static Array</h2><p>性质：初始化后长度不能变了</p><h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><h4 id="一维"><a href="#一维" class="headerlink" title="一维"></a>一维</h4><pre><code class="lang-java">// Type[] names = new Type[capacity];int[] a = new int[10];String[] s = new String[3];// Type[] names = new Type[]{Tpye ...a};int[] a = new int[]{1, 2, 3, 4};    // int[] a = {1, 2, 3, 4};char[] b = new char[]{&#39;a&#39;, &#39;b&#39;};    // char[] b = {&#39;a&#39;, &#39;b&#39;};String[] s = new String[]{&quot;hello&quot;, &quot;world&quot;};// 创建Set&lt;String&gt; set = new Set[105]; // 每一个指向一个nullfor (int i = 0; i &lt; 105; i++) jud[i] = new HashSet&lt;&gt;();  // 每个Set现在才被创建出来</code></pre><h4 id="二维"><a href="#二维" class="headerlink" title="二维"></a>二维</h4><pre><code class="lang-java">// 二维int[][] c = new int[10][10];</code></pre><h3 id="instance属性"><a href="#instance属性" class="headerlink" title="instance属性"></a>instance属性</h3><h4 id="length"><a href="#length" class="headerlink" title="length"></a>length</h4><p><code>.length</code> <em>记得是属性而不是方法 <code>arr.length</code> 没有()</em></p><h3 id="技巧"><a href="#技巧" class="headerlink" title="技巧"></a>技巧</h3><h4 id="Arrays-sort从小到大排序"><a href="#Arrays-sort从小到大排序" class="headerlink" title="Arrays.sort从小到大排序"></a>Arrays.sort从小到大排序</h4><p><code>Arrays.sort(int[] arr)</code> <code>Arrays.sort(int[] arr, int fromIndex, int toIndex)</code> 数组类型只要实现了Comparable接口就行(基本数据类型int也可以)</p><pre><code class="lang-java">Arrays.sort(int[] arr, int fromIndex, int toIndex, 比较器); //一定是需要泛型Arrays.sort(arr, (o1, o2) -&gt; o2 - o1); //数组全部 从大到小排序 跟Collections.sort()一样Arrays.sort(arr, 0, 3, (o1, o2) -&gt; o2 - o1); //从大到小排序，只排序[0, 3)</code></pre><h4 id="Arrays-fill填满一个数组"><a href="#Arrays-fill填满一个数组" class="headerlink" title="Arrays.fill填满一个数组"></a>Arrays.fill填满一个数组</h4><pre><code class="lang-java">int[] a = new int[5];Arrays.fill(a, 1);</code></pre><h4 id="Arrays-copyOf-arr-clone-复制一个数组-二维数组也可以"><a href="#Arrays-copyOf-arr-clone-复制一个数组-二维数组也可以" class="headerlink" title="Arrays.copyOf / arr.clone()复制一个数组(二维数组也可以)"></a>Arrays.copyOf / arr.clone()复制一个数组(二维数组也可以)</h4><pre><code class="lang-java">int[] a = new int[5];int[] newA = Array.copyOf(a, 5);// orint[][] a = {{1}, {1,2}, {1,2,3}, {1,2,3,4}, {1,2,3,4,5}}; // 不是5*5，第一维1 2 3 4 5int[][] newa = a.clone(); // 不是5*5矩阵</code></pre><h2 id="动态数组-List-amp-Dynamic-Array"><a href="#动态数组-List-amp-Dynamic-Array" class="headerlink" title="动态数组 List &amp; Dynamic Array"></a>动态数组 List &amp; Dynamic Array</h2><p>性质: 可以动态扩容的数组</p><h3 id="初始化-1"><a href="#初始化-1" class="headerlink" title="初始化"></a>初始化</h3><h4 id="常规-ArrayList更常用"><a href="#常规-ArrayList更常用" class="headerlink" title="常规 - ArrayList更常用"></a>常规 - ArrayList更常用</h4><pre><code class="lang-java">List&lt;Integer&gt; array = new ArrayList&lt;&gt;();    // 数组List&lt;Integer&gt; list = new LinkedList&lt;&gt;();    // 链表</code></pre><h4 id="接受一个Stack、Set等容器为参数-以Set举例"><a href="#接受一个Stack、Set等容器为参数-以Set举例" class="headerlink" title="接受一个Stack、Set等容器为参数 - 以Set举例"></a>接受一个Stack、Set等容器为参数 - 以Set举例</h4><pre><code class="lang-java">// Set&lt;Integer&gt; a = new HashSet....List&lt;Integer&gt; b = new ArrayList&lt;&gt;(a);</code></pre><h3 id="instance方法（List接口方法）"><a href="#instance方法（List接口方法）" class="headerlink" title="instance方法（List接口方法）"></a>instance方法（List接口方法）</h3><p><em>方法：get, size, add, remove, subList</em></p><h4 id="get"><a href="#get" class="headerlink" title="get"></a>get</h4><pre><code class="lang-java">.get(int index)    // 返回元素位置在index的元素e --- array O(1), list O(n)</code></pre><h4 id="size"><a href="#size" class="headerlink" title="size"></a>size</h4><pre><code class="lang-java">.size()    // 返回数组长度 --- O(1)</code></pre><h4 id="add"><a href="#add" class="headerlink" title="add"></a>add</h4><pre><code class="lang-java">.add(E e)    // 在尾部添加一个元素e --- O(1).add(int index, E e)    // 在index位置插一个元素e --- O(n)</code></pre><h4 id="remove"><a href="#remove" class="headerlink" title="remove"></a>remove</h4><pre><code class="lang-java">.remove(int index)    // 删除位于index的元素，并返回删除元素e --- 删除最后元素为O(1)， 其余为O(n)//删除最后元素 list.remove(list.size() - 1);</code></pre><h4 id="subList"><a href="#subList" class="headerlink" title="subList"></a>subList</h4><pre><code class="lang-java">.subList(int from, int to)    // 相当于返回原数组的一个片段,但不要对其进行改动，改动会影响原数组 --- O(1)// List&lt;Integer&gt; list, 对原来的list和返回的list做的“非结构性修改”(non-structural changes)，//都会影响到彼此对方. 如果你在调用了sublist返回了子list之后，如果修改了原list的大小，那么之前产生的子list将会失效，变得不可使用</code></pre><h3 id="技巧-1"><a href="#技巧-1" class="headerlink" title="技巧"></a>技巧</h3><p><code>Collections.sort(list);</code> 从小到大排序<br><code>Collections.sort(list, (o1, o2) -&gt; o2 - o1);</code> 从大到小排序， 第二个参数为一个比较器<br>``</p><h2 id="栈-Stack"><a href="#栈-Stack" class="headerlink" title="栈 Stack"></a>栈 Stack</h2><p>性质： 先进后出</p><h3 id="初始化-唯一初始化方式"><a href="#初始化-唯一初始化方式" class="headerlink" title="初始化 (唯一初始化方式)"></a>初始化 (唯一初始化方式)</h3><pre><code class="lang-java">Stack&lt;Integer&gt; stack = new Stack&lt;&gt;();</code></pre><h3 id="instance方法"><a href="#instance方法" class="headerlink" title="instance方法"></a>instance方法</h3><p><em>方法：push, pop, peek, isEmpty, size</em></p><h4 id="push"><a href="#push" class="headerlink" title="push"></a>push</h4><pre><code class="lang-java">.push(E e);    // 入栈元素e， 返回值为元素e --- O(1)</code></pre><h4 id="pop"><a href="#pop" class="headerlink" title="pop"></a>pop</h4><pre><code class="lang-java">.pop();    // 出栈一个元素，返回出栈元素e --- O(1)</code></pre><h4 id="peek"><a href="#peek" class="headerlink" title="peek"></a>peek</h4><pre><code class="lang-java">.peek();    // 查看栈顶元素， 返回值为栈顶元素e --- O(1)</code></pre><h4 id="isEmpty"><a href="#isEmpty" class="headerlink" title="isEmpty"></a>isEmpty</h4><pre><code class="lang-java">.isEmpty()    // 若栈空返回true， 否则返回false --- O(1)</code></pre><h4 id="size-1"><a href="#size-1" class="headerlink" title="size"></a>size</h4><pre><code class="lang-java">.size()    // 返回栈中元素个数 --- O(1)</code></pre><h2 id="队列-Queue"><a href="#队列-Queue" class="headerlink" title="队列 Queue"></a>队列 Queue</h2><p>性质：先进先出<br>通过实现实现队列接口的LinkedList&lt;&gt;();</p><h3 id="初始化-2"><a href="#初始化-2" class="headerlink" title="初始化"></a>初始化</h3><h4 id="使用LinkedList实现Queue接口初始化"><a href="#使用LinkedList实现Queue接口初始化" class="headerlink" title="使用LinkedList实现Queue接口初始化"></a>使用LinkedList实现Queue接口初始化</h4><pre><code class="lang-java">Queue&lt;Integer&gt; q = new LinkedList&lt;&gt;();</code></pre><h4 id="把集合如Stack、Set、List等Collection作为参数"><a href="#把集合如Stack、Set、List等Collection作为参数" class="headerlink" title="把集合如Stack、Set、List等Collection作为参数"></a>把集合如Stack、Set、List等Collection作为参数</h4><pre><code class="lang-java">// Set&lt;Integer&gt; set = new HashSet&lt;&gt;();Queue&lt;Integer&gt; q = new LinkedList&lt;&gt;(set);</code></pre><h3 id="instance方法-Queue接口"><a href="#instance方法-Queue接口" class="headerlink" title="instance方法 (Queue接口)"></a>instance方法 (Queue接口)</h3><p><em>方法：offer, poll, peek, isEmpty, size</em></p><h4 id="offer"><a href="#offer" class="headerlink" title="offer"></a>offer</h4><pre><code class="lang-java">.offer(E e);    // 队尾加入元素e。 若成功入队返回值true，否则返回false --- O(1)</code></pre><h4 id="poll"><a href="#poll" class="headerlink" title="poll"></a>poll</h4><pre><code class="lang-java">.poll();    // 出队首，返回出队元素e --- O(1)</code></pre><h4 id="peek-1"><a href="#peek-1" class="headerlink" title="peek"></a>peek</h4><pre><code class="lang-java">.peek();    // 查看队首元素， 返回值队首元素e --- O(1)</code></pre><h4 id="isEmpty-1"><a href="#isEmpty-1" class="headerlink" title="isEmpty"></a>isEmpty</h4><pre><code class="lang-java">.isEmpty()    // 若队空返回true， 否则返回false --- O(1)</code></pre><h4 id="size-2"><a href="#size-2" class="headerlink" title="size"></a>size</h4><pre><code class="lang-java">.size()    // 返回队中元素个数 --- O(1)</code></pre><h2 id="优先队列-PriorityQueue-Heap"><a href="#优先队列-PriorityQueue-Heap" class="headerlink" title="优先队列 PriorityQueue (Heap)"></a>优先队列 PriorityQueue (Heap)</h2><p>性质：底层是一颗数， 以小根堆为例。对于任意结点来说，该节点的值比其左右孩子的值都要小。 （就是最上面的结点最小）。 大根堆类似，最上面结点最大</p><h3 id="初始化-3"><a href="#初始化-3" class="headerlink" title="初始化"></a>初始化</h3><h4 id="小根堆"><a href="#小根堆" class="headerlink" title="小根堆"></a>小根堆</h4><pre><code class="lang-java">Queue&lt;Integer&gt; minH = new PriorityQueue&lt;&gt;();    // 小根堆，默认大小为11 相当于  new PriorityQueue&lt;&gt;(11)Queue&lt;Integer&gt; minH = new PriorityQueue&lt;&gt;(100);  // 定义一个默认容量有100的小根堆。在当中增加元素会扩容，只是开始指定大小。不是size，是capacity</code></pre><h4 id="大根堆"><a href="#大根堆" class="headerlink" title="大根堆"></a>大根堆</h4><pre><code class="lang-java">Queue&lt;Integer&gt; maxH = new PriorityQueue&lt;&gt;((i1, i2) -&gt; i2 - i1);    // 大根堆，默认大小为11 相当于  new PriorityQueue&lt;&gt;(11, (i1, i2) -&gt; i2 - i1)Queue&lt;Integer&gt; maxH = new PriorityQueue&lt;&gt;(100, (i1, i2) -&gt; i2 - i1);    // 定义一个默认容量有100的大根堆。在当中增加元素会扩容，只是开始指定大小</code></pre><h3 id="instance方法-Queue接口方法"><a href="#instance方法-Queue接口方法" class="headerlink" title="instance方法 (Queue接口方法)"></a>instance方法 (Queue接口方法)</h3><p><em>方法：offer, poll, peek, isEmpty, size</em></p><h4 id="offer-1"><a href="#offer-1" class="headerlink" title="offer"></a>offer</h4><pre><code class="lang-java">.offer(E e);    // 在堆中加入元素e，并调整堆。若成功入堆返回值true，否则返回false --- O(logN)</code></pre><h4 id="poll-1"><a href="#poll-1" class="headerlink" title="poll"></a>poll</h4><pre><code class="lang-java">.poll();    // 弹出堆顶元素，并重新调整堆，返回出队元素e --- O(logN)</code></pre><h4 id="peek-2"><a href="#peek-2" class="headerlink" title="peek"></a>peek</h4><pre><code class="lang-java">.peek();    // 查看堆顶元素， 返回值堆顶元素e --- O(1)</code></pre><h4 id="isEmpty-2"><a href="#isEmpty-2" class="headerlink" title="isEmpty"></a>isEmpty</h4><pre><code class="lang-java">.isEmpty()    // 若队空返回true， 否则返回false --- O(1)</code></pre><h4 id="size-3"><a href="#size-3" class="headerlink" title="size"></a>size</h4><pre><code class="lang-java">.size()    // 返回队中元素个数 --- O(1)</code></pre><h3 id="技巧-2"><a href="#技巧-2" class="headerlink" title="技巧"></a>技巧</h3><h4 id="从小到大（或从大到小弹出元素）"><a href="#从小到大（或从大到小弹出元素）" class="headerlink" title="从小到大（或从大到小弹出元素）"></a>从小到大（或从大到小弹出元素）</h4><pre><code class="lang-java">while (!pq.isEmpty()) {}</code></pre><h2 id="集合-Set-HashSet"><a href="#集合-Set-HashSet" class="headerlink" title="集合 Set - HashSet"></a>集合 Set - HashSet</h2><p>性质：Set中没有重复元素，重复添加的元素抛弃</p><h3 id="初始化-4"><a href="#初始化-4" class="headerlink" title="初始化"></a>初始化</h3><h4 id="默认构造函数"><a href="#默认构造函数" class="headerlink" title="默认构造函数"></a>默认构造函数</h4><pre><code class="lang-java">Set&lt;Integer&gt; set = new HashSet&lt;&gt;();</code></pre><h4 id="把集合如Stack、Queue、List等Collection作为参数"><a href="#把集合如Stack、Queue、List等Collection作为参数" class="headerlink" title="把集合如Stack、Queue、List等Collection作为参数"></a>把集合如Stack、Queue、List等Collection作为参数</h4><pre><code class="lang-java">// List&lt;Integer&gt; list = new ArrayList&lt;&gt;....;// Set&lt;Integer&gt; set = new HashSet&lt;&gt;(list);</code></pre><h3 id="instance方法-Set接口方法"><a href="#instance方法-Set接口方法" class="headerlink" title="instance方法 (Set接口方法)"></a>instance方法 (Set接口方法)</h3><p><em>方法：add, remove, contains, isEmpty, size</em></p><h4 id="add-1"><a href="#add-1" class="headerlink" title="add"></a>add</h4><pre><code class="lang-java">.add(E e);    // 在集合中添加元素E e， 若成功添加则返回true，若集合中有元素e则返回false --- O(1)</code></pre><h4 id="remove-1"><a href="#remove-1" class="headerlink" title="remove"></a>remove</h4><pre><code class="lang-java">.remove(E e);    // 在集合中删除元素e，若删除成功返回true；若集合中没有元素e，返回false --- O(1)</code></pre><h4 id="contains"><a href="#contains" class="headerlink" title="contains"></a>contains</h4><pre><code class="lang-java">.contains(E e);    // 若存在元素e，则返回true，否则返回false --- O(1)</code></pre><h4 id="isEmpty-3"><a href="#isEmpty-3" class="headerlink" title="isEmpty"></a>isEmpty</h4><pre><code class="lang-java">.isEmpty()    // 若集合为空返回true， 否则返回false --- O(1)</code></pre><h4 id="size-4"><a href="#size-4" class="headerlink" title="size"></a>size</h4><pre><code class="lang-java">.size()    // 返回集合中中元素个数 --- O(1)</code></pre><h4 id="first-TreeSet"><a href="#first-TreeSet" class="headerlink" title="first (TreeSet)"></a>first (TreeSet)</h4><pre><code class="lang-java">.first()    // 返回集合里的最小值（若给了比较器从大到小则是返回最大值）</code></pre><h4 id="last-TreeSet"><a href="#last-TreeSet" class="headerlink" title="last (TreeSet)"></a>last (TreeSet)</h4><pre><code class="lang-java">.last()    // 返回集合里的最大值（若给了比较器从大到小则是返回最小值）</code></pre><h2 id="散列表-HashMap"><a href="#散列表-HashMap" class="headerlink" title="散列表 HashMap"></a>散列表 HashMap</h2><p>性质：使用健值对的方式存储数据 <Key,Value></p><h3 id="初始化-5"><a href="#初始化-5" class="headerlink" title="初始化"></a>初始化</h3><h4 id="key和value是任何Collection或任何Object"><a href="#key和value是任何Collection或任何Object" class="headerlink" title=" key和value是任何Collection或任何Object"></a><Key, Value> key和value是任何Collection或任何Object</h4><pre><code class="lang-java">Map&lt;Characters, Integer&gt; map = new HashMap&lt;&gt;();</code></pre><h3 id="instance方法-Map接口方法"><a href="#instance方法-Map接口方法" class="headerlink" title="instance方法 (Map接口方法)"></a>instance方法 (Map接口方法)</h3><p><em>方法：put, get, getOrDefault, containsKey, containsValue, keySet, values, isEmpty, size</em></p><h4 id="put"><a href="#put" class="headerlink" title="put"></a>put</h4><pre><code class="lang-java">.put(K key, V value);    // 在Map中加入键值对&lt;key, value&gt;。返回value值。如果Map中有key，则replace旧的value --- O(1)</code></pre><h4 id="get-1"><a href="#get-1" class="headerlink" title="get"></a>get</h4><pre><code class="lang-java">.get(K key);    // 返回Map中key对应的value。若Map中没有该key，则返回null --- O(1)</code></pre><h4 id="getOrDefault"><a href="#getOrDefault" class="headerlink" title="getOrDefault"></a>getOrDefault</h4><pre><code class="lang-java">.getOrDefault(K key, V defaultValue);    // 返回Map中key对应的value。若Map中没有该key，则返回defaultValue --- O(1)// For example:// Map&lt;Character, Integer&gt; map = new HashMap&lt;&gt;();// if (...)    // 如果发现k，则k在Map中的值加1。没一开始没有k，则从0开始加1。（相当于给了key在Map中的一个初试值）    map.put(&#39;k&#39;, map.getOrDefault(&#39;k&#39;, 0) + 1);</code></pre><h4 id="containsKey"><a href="#containsKey" class="headerlink" title="containsKey"></a>containsKey</h4><pre><code class="lang-java">.containsKey(Key key);    // 在Map中若存在key，则返回true，否则返回false --- O(1).get(x) == null // 可以代替改用法</code></pre><h4 id="containsValue"><a href="#containsValue" class="headerlink" title="containsValue"></a>containsValue</h4><pre><code class="lang-java">.containsValue(V value);    // 在Map中若存在value，则返回true，否则返回false --- O(1)</code></pre><h4 id="keySet"><a href="#keySet" class="headerlink" title="keySet"></a>keySet</h4><pre><code class="lang-java">.keySet();    // 返回一个Set,这个Set中包含Map中所有的Key --- O(1)// For example:// We want to get all keys in Map// Map&lt;Character, Integer&gt; map = new HashMap&lt;&gt;();for (Character key : map.keySet()) {    // Operate with each key}</code></pre><h4 id="values"><a href="#values" class="headerlink" title="values"></a>values</h4><pre><code class="lang-java">.values();    // 返回一个Collection&lt;v&gt;,里面全是对应的每一个value --- O(1)// For example:// We want to get all values in Map// Map&lt;Character, Integer&gt; map = new HashMap&lt;&gt;();for (Integer value : map.values()) {    // Operate with each values}</code></pre><h4 id="isEmpty-4"><a href="#isEmpty-4" class="headerlink" title="isEmpty"></a>isEmpty</h4><pre><code class="lang-java">.isEmpty()    // 若Map为空返回true， 否则返回false --- O(1)</code></pre><h4 id="size-5"><a href="#size-5" class="headerlink" title="size"></a>size</h4><pre><code class="lang-java">.size()    // 返回Map中中键值对&lt;K, V&gt;的个数 --- O(1)</code></pre><h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><h3 id="String"><a href="#String" class="headerlink" title="String"></a>String</h3><p>性质：不可变量(相当于只读final修饰)<br>每个位置元素是个char</p><h4 id="初始化-6"><a href="#初始化-6" class="headerlink" title="初始化"></a>初始化</h4><h5 id="字符串复制初始化"><a href="#字符串复制初始化" class="headerlink" title="字符串复制初始化"></a>字符串复制初始化</h5><pre><code class="lang-java">String s = &quot;abc&quot;;</code></pre><h5 id="基于另外一个字符串"><a href="#基于另外一个字符串" class="headerlink" title="基于另外一个字符串"></a>基于另外一个字符串</h5><pre><code class="lang-java">// s = &quot;abc&quot;String s2 = new String(s);</code></pre><h5 id="基于char"><a href="#基于char" class="headerlink" title="基于char[]"></a>基于char[]</h5><pre><code class="lang-java">// s = &quot;abc&quot;;// char[] c = s.toCharArray();String s3 = new String(c);// 可以偏移// public String(char value[], int offset, int count)String s4 = new String(c, 1, 2);    // [offset, offset + count) [)// 把char[] 变成字符串char[] ch = {&#39;a&#39;, &#39;b&#39;, &#39;c&#39;};String.valueOf(ch);</code></pre><h4 id="类方法"><a href="#类方法" class="headerlink" title="类方法"></a>类方法</h4><p><code>String.valueOf( 一个参数Object/基本数据类型 )</code> 返回传入参数obj的toString(),若为空返回字符串”null”。 若为基本类型调用其 包装类的toString方法（<code>Integer.toString(i)</code>）</p><h4 id="instance方法-1"><a href="#instance方法-1" class="headerlink" title="instance方法"></a>instance方法</h4><p><em>方法: charAt, length, substring, equals, indexOf, lastIndexOf, replace, toCharArray, trim, split, toLowerCase, toUpperCase</em></p><h5 id="charAt"><a href="#charAt" class="headerlink" title="charAt"></a>charAt</h5><pre><code class="lang-java">.charAt(int index);    // 返回index位置的char --- O(1)</code></pre><h5 id="length-1"><a href="#length-1" class="headerlink" title="length"></a>length</h5><pre><code class="lang-java">.length();    // 返回字符串长度 --- O(1)</code></pre><h5 id="substring"><a href="#substring" class="headerlink" title="substring"></a>substring</h5><pre><code class="lang-java">.substring(int beginIndex, int endIndex);    // 返回字符片段[beginIndex, endIndex) --- O(n).substring(int beginIndex);    // 返回字符片段[beginIndex, end_of_String) 就是从beginIndex开始后面的 ---- O(n)</code></pre><h5 id="indexOf-是（暴力查找字符串，不是KMP）"><a href="#indexOf-是（暴力查找字符串，不是KMP）" class="headerlink" title="indexOf 是（暴力查找字符串，不是KMP）"></a>indexOf 是（暴力查找字符串，不是KMP）</h5><pre><code class="lang-java">.indexOf(String str)    // 返回str第一个出现的位置(int)，没找到则返回-1。 --- O(m * n) m为原串长度， n为str长度// (假如要找一个字符char c，str可以表示成String.valueOf(c),然后作为参数传进去.s.indexOf(String str, int fromIndex);    // 同上，但从fromIndex开始找 --- O(m * n)</code></pre><h5 id="lastIndexOf"><a href="#lastIndexOf" class="headerlink" title="lastIndexOf"></a>lastIndexOf</h5><pre><code class="lang-java">.lastIndexOf(String str);    // 返回str最后出现的位置(int)，没找到则返回-1。 --- O(m * n) m为原串长度， n为str长度// (假如要找一个字符char c，str可以表示成String.valueOf(c),然后作为参数传进去..lastIndexOf(String str, int fromIndex);    // 同上，//但从fromIndex开始从后往前找 [0 &lt;- fromIndex] --- O(m * n)</code></pre><h5 id="replace-只能换char"><a href="#replace-只能换char" class="headerlink" title="replace 只能换char"></a>replace 只能换char</h5><pre><code class="lang-java">.replace(char oldChar, char newChar);    // 返回一个新字符串String，其oldChar全部变成newChar --- O(n)</code></pre><h5 id="toCharArray"><a href="#toCharArray" class="headerlink" title="toCharArray"></a>toCharArray</h5><pre><code class="lang-java">.toCharArray();    // 返回char[] 数组。 把String编程字符数组 --- O(n)</code></pre><h5 id="trim-去除前后空格"><a href="#trim-去除前后空格" class="headerlink" title="trim 去除前后空格"></a>trim 去除前后空格</h5><pre><code class="lang-java">.trim();    // 返回去除前后空格的新字符串 --- O(n)</code></pre><h5 id="split-以什么分开"><a href="#split-以什么分开" class="headerlink" title="split 以什么分开"></a>split 以什么分开</h5><pre><code class="lang-java">.split(String regex);    // 返回 String[]，以regex(正则表达式)分隔好的字符换数组。 ---- O(n)// For example// 从非&quot;/&quot;算起 若&quot;/a/c&quot; -&gt; 会变成&quot;&quot; &quot;a&quot; &quot;c&quot;String[] date = str.split(&quot;/&quot;);     // date[0]:1995 date[1]:12 date[2]:18 --- O(n)</code></pre><h5 id="toLowerCase-toUpperCase-转换大小写"><a href="#toLowerCase-toUpperCase-转换大小写" class="headerlink" title="toLowerCase, toUpperCase 转换大小写"></a>toLowerCase, toUpperCase 转换大小写</h5><pre><code class="lang-java">s = s.toLowerCase();    // 返回一个新的字符串全部转成小写 --- O(n)s = s.toUpperCase();    // 返回一个新的字符串全部转成大写 --- O(n)</code></pre><h4 id="技巧-3"><a href="#技巧-3" class="headerlink" title="技巧"></a>技巧</h4><p>通过<code>+</code>连接其他字符串， 但是是两个组成一个新的字符串，有开销。最好用StringBuilder</p><h3 id="StringBuilder"><a href="#StringBuilder" class="headerlink" title="StringBuilder"></a>StringBuilder</h3><h4 id="初始化-7"><a href="#初始化-7" class="headerlink" title="初始化"></a>初始化</h4><pre><code class="lang-java">StringBuilder sb = new StringBuilder();</code></pre><h4 id="instance方法-2"><a href="#instance方法-2" class="headerlink" title="instance方法"></a>instance方法</h4><p><em>方法: append, charAt, length, setCharAt, insert, deleteCharAt, delete, reverse, toString</em></p><h5 id="charAt-1"><a href="#charAt-1" class="headerlink" title="charAt"></a>charAt</h5><pre><code class="lang-java">.charAt(int index);    // 返回index位置的char --- O(1)</code></pre><h5 id="length-2"><a href="#length-2" class="headerlink" title="length"></a>length</h5><pre><code class="lang-java">.length();    // 返回缓冲字符串长度 --- O(1)</code></pre><h5 id="setCharAt"><a href="#setCharAt" class="headerlink" title="setCharAt"></a>setCharAt</h5><pre><code class="lang-java">.setCharAt(int index, char ch);    // 设置index位置的char为ch --- O(1)</code></pre><h5 id="insert"><a href="#insert" class="headerlink" title="insert"></a>insert</h5><pre><code class="lang-java">.insert(int offset, String str);    // 在offer位置的插入字符串str--- O(m + n)</code></pre><h5 id="deleteCharAt"><a href="#deleteCharAt" class="headerlink" title="deleteCharAt"></a>deleteCharAt</h5><pre><code class="lang-java">.deleteCharAt(int index);    // 删除index位置的char --- O(n).deleteCharAt(sb.length() - 1);    // 删除最后一个char --- O(1)</code></pre><h5 id="delete"><a href="#delete" class="headerlink" title="delete"></a>delete</h5><pre><code class="lang-java">.delete(int start, int end);    // 删除[start, end)位置的char --- O(n)</code></pre><h5 id="reverse"><a href="#reverse" class="headerlink" title="reverse"></a>reverse</h5><pre><code class="lang-java">.reverse();    // 反转缓存字符串 --- O(n)</code></pre><h5 id="toString-NaN"><a href="#toString-NaN" class="headerlink" title="toString"></a>toString</h5><pre><code class="lang-java">.toString();    // 返回一个与构建起或缓冲器内容相同的字符串 --- O(n)</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>Java</category>
+      
+      <category>集合类</category>
+      
+      <category>技巧</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>STL Summary</title>
+    <link href="/2018/12/18/STL_Summary/"/>
+    <url>/2018/12/18/STL_Summary/</url>
+    
+    <content type="html"><![CDATA[<h1 id="STL-amp-C-刷题技巧"><a href="#STL-amp-C-刷题技巧" class="headerlink" title="STL &amp; C++刷题技巧"></a>STL &amp; C++刷题技巧</h1><div class="table-container"><table><thead><tr><th style="text-align:center">容器</th><th style="text-align:center">头文件</th><th style="text-align:center">方法</th><th style="text-align:center">备注</th></tr></thead><tbody><tr><td style="text-align:center"><strong>vector</strong></td><td style="text-align:center">vector</td><td style="text-align:center"><code>push_back/pop_back</code> <code>resize</code> <code>erase</code> <code>front/back</code> <code>begin/ end</code> <code>size/clear/empty</code> <code>[]</code></td><td style="text-align:center">resize的参数跟初始化一样</td></tr><tr><td style="text-align:center"><strong>list</strong></td><td style="text-align:center">list</td><td style="text-align:center"><code>push_back/pop_back</code> <code>front/back</code> <code>erase</code> <code>begin/ end</code> <code>size/clear/empty</code> <code>[]</code></td><td style="text-align:center"></td></tr><tr><td style="text-align:center"><strong>string</strong></td><td style="text-align:center">string</td><td style="text-align:center"><code>substr</code> <code>+=/push_back</code> <code>find</code> <code>c_str</code> <code>replace</code> <code>size/length/clear/empty</code> <code>[]</code></td><td style="text-align:center">getline(cin,s6); 读取字符到遇到换行，空格可读入，知道‘\n’结束. <code>c_str()</code>可以用printf %s输出 <code>to_string() / stoi()/stod()</code>在这个头文件中。  char转成字符串 <code>string(1, c)</code></td></tr><tr><td style="text-align:center"><strong>stack</strong></td><td style="text-align:center">stack</td><td style="text-align:center"><code>push</code> <code>pop</code> <code>top</code> <code>size/empty</code></td><td style="text-align:center"><strong>没有</strong><code>clear</code>， 要一个个弹出</td></tr><tr><td style="text-align:center"><strong>queue</strong></td><td style="text-align:center">queue</td><td style="text-align:center"><code>push</code> <code>pop</code> <code>top</code> <code>front/back</code> <code>size/empty</code></td><td style="text-align:center"><strong>没有</strong><code>clear</code>， 要一个个弹出</td></tr><tr><td style="text-align:center"><strong>priority_queue</strong></td><td style="text-align:center">queue</td><td style="text-align:center"><code>push/pop</code> <code>size/empty</code></td><td style="text-align:center">默认大根堆 小根堆<code>priority_queue&lt;int, vector&lt;int&gt;, greater&lt;int&gt; &gt; q;</code> 小于的定义是反的</td></tr><tr><td style="text-align:center"><strong>deque</strong></td><td style="text-align:center">deque</td><td style="text-align:center"><code>push_back/pop_back</code> <code>front/back</code> <code>begin/ end</code> <code>size/clear/empty</code> <code>[]</code></td><td style="text-align:center">deque容器虽然支持随机访问，但是其<strong>随机访问</strong>速度慢于vector容器。插(删)头尾O(1)</td></tr><tr><td style="text-align:center"><strong>set</strong></td><td style="text-align:center">set</td><td style="text-align:center"><code>insert</code> <code>count / find</code> <code>erase</code> <code>begin/ end</code> <code>size/clear/empty</code></td><td style="text-align:center">自动去重升序排序 <code>O(logn)</code> <code>构造函数vector-&gt;set(v.begin(), v.end())</code></td></tr><tr><td style="text-align:center"><strong>unordered_set</strong></td><td style="text-align:center">unordered_set</td><td style="text-align:center"><code>insert</code> <code>count / find</code> <code>erase</code> <code>begin/ end</code> <code>size/clear/empty</code></td><td style="text-align:center"><code>O(1)</code></td></tr><tr><td style="text-align:center"><strong>map</strong></td><td style="text-align:center">map</td><td style="text-align:center"><code>insert</code> <code>count / find</code> <code>[]</code> <code>erase</code> <code>begin/ end</code> <code>size/clear/empty</code></td><td style="text-align:center">基于平衡树<code>O(logn)</code> 可以使用初始化列表</td></tr><tr><td style="text-align:center"><strong>unordered_map</strong></td><td style="text-align:center">unordered_map</td><td style="text-align:center"><code>insert</code> <code>count / find</code> <code>erase</code> <code>size/clear/empty</code></td><td style="text-align:center">基于哈希表<code>O(1)</code></td></tr><tr><td style="text-align:center"><strong>其他</strong></td><td style="text-align:center"></td><td style="text-align:center"><code>max_element</code> <code>lower_bound</code> <code>next_permutation</code></td><td style="text-align:center">！！！ 用<code>.size()</code>不要拿它做减法，返回的是<code>unsigned int</code>无符号整数做减法不会小于0</td></tr></tbody></table></div><h1 id="常用"><a href="#常用" class="headerlink" title="常用"></a>常用</h1><h2 id="输出保留小数"><a href="#输出保留小数" class="headerlink" title="输出保留小数"></a>输出保留小数</h2><pre><code class="lang-c++">printf(&quot;%.6f&quot;, k);  // 保留6位小数   (double - printf - %f) (doubel - scanf - %lf)</code></pre><h2 id="cin以回车分隔"><a href="#cin以回车分隔" class="headerlink" title="cin以回车分隔"></a>cin以回车分隔</h2><pre><code class="lang-c++">getline(cin,str);   // str 为 string</code></pre><h2 id="cin优化"><a href="#cin优化" class="headerlink" title="cin优化"></a>cin优化</h2><pre><code class="lang-c++">// 两句话一起写ios::sync_with_stdio(false);cin.tie(0);</code></pre><h2 id="EOF"><a href="#EOF" class="headerlink" title="EOF"></a>EOF</h2><pre><code class="lang-c++">// scanfwhile (scanf(&quot;%d %d&quot;,&amp;a, &amp;b) != EOF) {    printf(&quot;%d\n&quot;, a + b);}// cinwhile (!cin.eof()) {    cin &gt;&gt; a &gt;&gt; b;    cout &lt;&lt; a + b &lt;&lt; endl;}// ctrl + z 结束</code></pre><h2 id="to-string"><a href="#to-string" class="headerlink" title="to_string()"></a>to_string()</h2><pre><code class="lang-c++">// 把数字转成字符串的相互转换，负数也可以double f = 23.43string f_str = to_string(f);    // 23.430000double f_double = stod(f);   //转换回double  23.43</code></pre><p><strong>PS： char转成字符串 <code>string(1, c)</code>, 不能用to_string(c),这样是在转换成c的ASCII码</strong></p><h2 id="pair"><a href="#pair" class="headerlink" title="pair"></a>pair</h2><ul><li>pair对于排序来说是以first为第一关键字排序， second为第二关键字排序</li><li>赋值的时候可以使用花括号代替<code>{1, 2}</code></li></ul><h2 id="memset"><a href="#memset" class="headerlink" title="memset"></a>memset</h2><p>每4个字节赋值， Ox3f3f3f3f 大约是10^9次方多一点点</p><pre><code class="lang-c++">memset(h, -1, sizeof h);memset(h, 0, sizeof h);memset(h, 0x3f, sizeof h);  // memset这个函数是按字节来赋值的，int有4个字节，所以把每个字节都赋值成0x3f以后就是0x3f3f3f3f。  大于10的9次方memset(h, 0xc0, sizeof h);  // memset这个函数是按字节来赋值的，int有4个字节，所以把每个字节都赋值成0x3f以后就是0xc0c0c0c0。memset(dp[0], 0x3f, sizeof dp);  // memset一维 sizeof dp是指第一个类型的大小// &quot;较&quot;: 相加不溢出较大值：0x3f  // 16进制(0x3f3f3f3f) = 10进制(1061109567) &gt; 1e9较小值：0xc0  // 16进制(0xc0c0c0c0) = 10进制(-1061109568) &gt; -1e9最大值：0x7f // 16进制(0x7f7f7f7f) = 10进制(2139062143)最小值：0x80 // 16进制(0x80808080) = 10进制(-2139062144)</code></pre><h2 id="sort"><a href="#sort" class="headerlink" title="sort"></a>sort</h2><pre><code class="lang-c++">// 默认从小到大// 对vector排序sort(v.begin(), v.end(), [](const int&amp; a, const int&amp; b){return a &gt; b;});// 对数组排序sort(arr, arr + 100);</code></pre><h2 id="lower-bound"><a href="#lower-bound" class="headerlink" title="lower_bound"></a>lower_bound</h2><p>找到一个大于等于这个数的位置的迭代器</p><p>区别map set的lower_bound内嵌在容器方法中</p><pre><code class="lang-c++">// 数组：number数组的下标为0的位置开始pos = lower_bound( number, number + 8, 3) - number  // vector： 获得当前迭代器auto it = lower_bound(v.begin(), v.end(), 3); // 容器只可以返回迭代器， 然后使用distance函数判断跟begin()的距离int pos = distance(v.begin(), it);// map set ： 获得第一个大于等于当前数的迭代器mp.lower_bound(2);</code></pre><h2 id="一维-lt-—-gt-二维"><a href="#一维-lt-—-gt-二维" class="headerlink" title="一维 &lt;—&gt; 二维"></a>一维 &lt;—&gt; 二维</h2><p>下标从0开始</p><pre><code class="lang-c++">// 第k个元素 -&gt; n * m的矩阵a (都从0开始)// 一维转二维 k -&gt; [x][y] x = k / m; y = k % m; // 二维转一维 [x][y] -&gt; k k = x * m + y;</code></pre><h2 id="结构体重载小于号"><a href="#结构体重载小于号" class="headerlink" title="结构体重载小于号"></a>结构体重载小于号</h2><ul><li>结构体<code>=</code>为赋值操作，是整个结构体赋值过去。 而类只是浅拷贝</li><li>LeetCode中要写在类的外面</li><li>写在类中LeetCode需要在前面加friend。<a href="http://www.voidcn.com/article/p-okwlzxpt-zm.html" target="_blank" rel="noopener">参考</a></li><li>不要对pair进行重载运算符，最好自己定义结构体</li><li>遇到<code>priority_queue</code>的时候需要相反定义 (认为大的越小， 小的越大)</li></ul><pre><code class="lang-c++">struct Node {    int p1, p2;    Node(int p1, int p2) : p1(p1), p2(p2) {}};// 推荐方式 !!!!!!! bool operator&lt; (const Node&amp; a, const Node&amp; b){    if (a.p1 == b.p1) return a.p2 &lt; b.p2;    return a.p1 &lt; b.p1;}// 以p1为第一关键字， p2为第二关键字排序  &amp;&amp; 优先级比 || 高bool operator&lt; (const Node&amp; a, const Node&amp; b){    // return a.p1 &lt; b.p1 || !(b.p1 &lt; a.p1) &amp;&amp; a.p2 &lt; b.p2;    return a.p1 &lt; b.p1 || a.p1 == b.p1 &amp;&amp; a.p2 &lt; b.p2;}Node n1(1, 2);</code></pre><ul><li>为什么重载&lt;号要这样写，而不写成<code>return a.p1 &lt; b.p1 || a.p1 == b.p1 &amp;&amp; a.p2 &lt; b.p2</code>？因为p1和p2是int，他们虽然有重载<code>==</code>。但是对于没有重载<code>==</code>来说,只须重载小于运算符. <a href="https://blog.csdn.net/dpfordor/article/details/1958077" target="_blank" rel="noopener">参考文献</a></li></ul><h2 id="堆-比较器"><a href="#堆-比较器" class="headerlink" title="堆-比较器"></a>堆-比较器</h2><p>(对于指针来说可以使用，比较器是反的)</p><p>推荐方式：重载()运算</p><pre><code class="lang-c++">struct cmp {    bool operator() (pair&lt;int, int&gt; &amp;a, pair&lt;int, int&gt; &amp;b) {        return a.first + a.second &lt; b.first + b.second;// 两者的和作为key  逻辑是反的，所以是大根堆    }};priority_queue&lt;pair&lt;int, int&gt;, vector&lt;pair&lt;int, int&gt;&gt;, cmp&gt; q;   // pair&lt;int, int&gt; 整体作为key，不写cmp默认第一个关键字作为key</code></pre><p>c++11</p><pre><code class="lang-c++">typedef pair&lt;string, int&gt; Node;typedef function&lt;bool(const Node&amp;, const Node&amp;)&gt; Compare;int main(){    // ...    Compare comparator = [](const Node&amp; a, const Node&amp; b) {        if (a.second == b.second)            return a.first &lt; b.first;           return a.second &gt; b.second;       };    // Min heap by frequency    priority_queue&lt;Node, vector&lt;Node&gt;, Compare&gt; q(comparator);    // ...}</code></pre><p>关于指针的写法</p><pre><code class="lang-c++">    typedef function&lt;bool(const ListNode*, const ListNode*)&gt; Compare;    Compare cmp = [](const ListNode *a, const ListNode *b) {            return a-&gt;val &lt; b-&gt;val;    };    // 大根堆    priority_queue&lt;ListNode*, vector&lt;ListNode*&gt;, Compare&gt; q(cmp);</code></pre><h2 id="swap交换vector"><a href="#swap交换vector" class="headerlink" title="swap交换vector"></a>swap交换vector</h2><ul><li>O(1)时间，实质是指针交换</li></ul><pre><code class="lang-c++">swap(v1, v2);</code></pre><h2 id="max多参数"><a href="#max多参数" class="headerlink" title="max多参数"></a>max多参数</h2><ul><li>C++ 11之后支持传入参数初始化列表</li></ul><pre><code class="lang-c++">int mx = max({a, b, c, d});    // a, b, c, d的最大值</code></pre><h2 id="位运算"><a href="#位运算" class="headerlink" title="位运算"></a>位运算</h2><ul><li>数的最高位是符号位</li><li>左移去掉最高位，然后左边补0。 </li><li>右移根据正数还是负数决定。 正数最高位补0， 负数补1</li><li>（记）计算机以补码表示： 除符号位越大，数越大</li><li>2的n次方 <code>1 &lt;&lt; n</code> (n &lt;= 30)    (1后面几个0就是 2的几次方)</li><li><code>INT_MAX == 1后面31个零     INT_MAX == 0后面31个1</code></li><li>取反操作 <code>~</code></li></ul><h2 id="生成随机数"><a href="#生成随机数" class="headerlink" title="生成随机数"></a>生成随机数</h2><p><code>a &lt;= x &lt;= b</code></p><ul><li><p>方法一：两者差值不能超过INT_MAX</p><pre><code class="lang-c++">  srand(time(0));  // 先设置随机种子  int randInt(int a, int b) {   // a b数的差值不能超过INT_MAX      return a + (rand() % (b - a + 1));  }  // 生成方法  int n = randX(1, 100);   // n ∈ [1, 100]</code></pre></li><li><p>方法二：int间的任何数</p><pre><code class="lang-c++">  typedef long long ll;  int myrand(int mod) { return ((ll)rand()&lt;&lt;32^(ll)rand()&lt;&lt;16^rand())%mod; }  #define random(a, b)((a) + myrand((b) - (a) + 1)) // Integer[a,b]  // 生成方法  int n = random(INT_MIN, INT_MAX);  // n ∈ [-2147483648, 2147483647]</code></pre></li><li><p>库函数C++11</p><pre><code class="lang-c++">default_random_engine e(time(0));int randInt(int a, int b) {    return a + (e() % (b - a + 1));}// 生成方法int n = randX(1, 100);   // n ∈ [1, 100]</code></pre></li></ul><h2 id="迭代器初始化容器"><a href="#迭代器初始化容器" class="headerlink" title="迭代器初始化容器"></a>迭代器初始化容器</h2><ul><li>set(map) &lt;-&gt; vector &lt;-&gt; string</li><li><strong>总之有迭代器的都可以</strong>。 stack 和 queue没有</li></ul><pre><code class="lang-c++">vector&lt;int&gt; a = {3, 2, 1};set&lt;int&gt; se(a.begin(), a.end()); // vector -&gt; setvector&lt;int&gt; a2(se.begin(), se.end()); // set -&gt; vectorvector&lt;pair&lt;int, int&gt;&gt; a = {{3, 1}, {2, 1}, {1, 1}};unordered_map&lt;int, int&gt; mp(a.begin(), a.end()); //vector -&gt; mapvector&lt;pair&lt;int, int&gt;&gt; a2(mp.begin(), mp.end());  // map -&gt; vectorunordered_set&lt;char&gt; se(word.begin(), word.end()); //word 为 string</code></pre><h2 id="pair不要使用引用"><a href="#pair不要使用引用" class="headerlink" title="pair不要使用引用"></a>pair不要使用引用</h2><pre><code class="lang-c++">deque&lt;pair&lt;int, int&gt;&gt; q;// auto&amp; t = q.front();   // 不要添加引用, 会出现意想不到的错误auto t = q.front();</code></pre><h2 id="Map-Set遍历时删除迭代器"><a href="#Map-Set遍历时删除迭代器" class="headerlink" title="Map Set遍历时删除迭代器"></a>Map Set遍历时删除迭代器</h2><ul><li>在一边遍历一边删除的时候，可能会引发一下问题，需要正确使用。</li><li>插入同理</li></ul><pre><code class="lang-c++">map&lt;char, int&gt; counts;// 删除counts.erase(it++);// 反向counts.erase(next(rit).base());   // c++ 11counts.erase(--(rit.base()));   // c++ 11以下</code></pre><pre><code class="lang-c++">// 正向for (auto it = mp.begin(); it != mp.end(); ) {    if (it-&gt;second == 2)        mp.erase(it++);    else         it++;   // c++11后可以用 it = next(it);}// 反向for (auto rit = mp.rbegin(); rit != mp.rend(); ) {    if (rit-&gt;second == 2)        mp.erase(--(rit.base()));  // c++ 11可以使用 mp.erase(next(rit).base());    else         rit++;}</code></pre><h2 id="String查找字符串"><a href="#String查找字符串" class="headerlink" title="String查找字符串"></a>String查找字符串</h2><pre><code class="lang-c++">string s1 = &quot;abcd&quot;;string s2 = &quot;ab&quot;;// 判断s1中是否有s2if (s1.find(s2) == std::string::npos) {    // 没有找到} else{    // 找到了}</code></pre><h2 id="map迭代访问"><a href="#map迭代访问" class="headerlink" title="map迭代访问"></a>map迭代访问</h2><pre><code class="lang-c++">unordered_map&lt;char, int&gt; mp;for (auto&amp; [key, value] : mp) { }  for (auto&amp; [_, value] : mp) { }   // 不要keyfor (auto&amp; kv : mp) {    char key = kv.first;    int value = kv.second;}</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>算法</category>
+      
+      <category>C++</category>
+      
+      <category>STL</category>
+      
+      <category>技巧</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>

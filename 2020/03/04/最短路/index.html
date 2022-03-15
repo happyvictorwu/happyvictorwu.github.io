@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="description" content="">
+  <meta name="author" content="Victor Wu">
+  <meta name="keywords" content="">
+  <title>最短路 ~ Victor&#39;s blog</title>
+
+  <link rel="stylesheet" href="/lib/font-awesome/css/all.min.css"  >
+<link rel="stylesheet" href="/lib/bootstrap/css/bootstrap.min.css"  >
+<link rel="stylesheet" href="/lib/mdbootstrap/css/mdb.min.css"  >
+<link rel="stylesheet" href="/lib/github-markdown/github-markdown.min.css"  >
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1067060_qzomjdt8bmp.css">
+
+
+
+  <link rel="stylesheet" href="/lib/prettify/tomorrow-night-eighties.min.css"  >
+
+<link rel="stylesheet" href="/css/main.css"  >
+
+
+  <link rel="stylesheet" href="/lib/fancybox/jquery.fancybox.min.css"  >
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Victor's blog</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">首页</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">归档</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">分类</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">标签</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" false
+         style="background: url('/img/default.png')no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask rgba-black-light flex-center">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              <br>
+              
+                <p class="mt-3">
+                  <i class="fas fa-calendar-alt" aria-hidden="true"></i>&nbsp;
+                  星期三, 三月 4日 2020, 10:07 上午
+                </p>
+              
+
+              <p>
+                
+                  
+                  &nbsp;<i class="far fa-chart-bar"></i>
+                  <span class="post-count">
+                    887 字
+                  </span>&nbsp;
+                
+
+                
+                  
+                  &nbsp;<i class="far fa-clock"></i>
+                  <span class="post-count">
+                      4 分钟
+                  </span>&nbsp;
+                
+
+                
+                  <!-- 不蒜子统计文章PV -->
+                  
+                  &nbsp;<i class="far fa-eye" aria-hidden="true"></i>&nbsp;
+                  <span id="busuanzi_container_page_pv">
+                    <span id="busuanzi_value_page_pv"></span> 次
+                  </span>&nbsp;
+                
+              </p>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="py-5 z-depth-3" id="board">
+        <div class="post-content mx-auto" id="post">
+          <div class="markdown-body">
+            <h1 id="最短路"><a href="#最短路" class="headerlink" title="最短路"></a>最短路</h1><p><img src="https://raw.githubusercontent.com/happy-yuxuan/picgo/master/img/image-20200127131950787.png" srcset="/img/loading.gif" alt=""></p>
+<h3 id="SPFA"><a href="#SPFA" class="headerlink" title="SPFA"></a>SPFA</h3><pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+int n, m;
+vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt; g;   // w id
+
+int spfa(int u) {
+    vector&lt;int&gt; dist(n + 1, INT_MAX);
+    vector&lt;bool&gt; used(n + 1, false);
+    dist[u] = 0;
+
+    queue&lt;int&gt; q;
+    q.push(u);
+    used[u] = true;
+    while (!q.empty()) {
+        int ver = q.front(); q.pop();
+        used[ver] = false;
+        for (auto &amp;e : g[ver]) {
+            int ne = e.second, w = e.first;
+            if (dist[ne] &gt; dist[ver] + w) {
+                dist[ne] = dist[ver] + w;
+                if (!used[ne]) {
+                    used[ne] = true;
+                    q.push(ne);
+                }
+            }
+        }
+    }
+    if (dist[n] == INT_MAX) return -1;
+    return dist[n];
+}
+
+int main() {
+    scanf(&quot;%d%d&quot;, &amp;n, &amp;m);
+    g = vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt;(n + 1);
+    for (int i = 0; i &lt; m; i++) {
+        int a, b, c;
+        scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;c);
+        g[a].push_back({c, b});
+    }
+    int ans = spfa(1);
+    printf(&quot;%d&quot;, ans);
+    return 0;
+}
+</code></pre>
+<h3 id="Dijkstra"><a href="#Dijkstra" class="headerlink" title="Dijkstra"></a>Dijkstra</h3><p>（堆优化版子）<code>T: O(mlogn)  S: O(n + m)</code></p>
+<pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+typedef pair&lt;int, int&gt; PII;
+
+int n, m;
+vector&lt;vector&lt;PII&gt;&gt; g;
+
+// 求 u 到 任何一点 的最短路
+int dijkstra(int u) {
+    vector&lt;int&gt; dist(n + 1, INT_MAX);
+    vector&lt;bool&gt; used(n + 1, false);
+    // vector&lt;int&gt; prev(n + 1, -1);   初试话为-1
+    priority_queue&lt;PII, vector&lt;PII&gt;, greater&lt;PII&gt;&gt; q;
+    q.push({0, u});
+    while (!q.empty()) {
+        PII t = q.top(); q.pop();
+        int ver = t.second, dis = t.first;
+        if (used[ver]) continue;
+
+        used[ver] = true;
+        dist[ver] = dis;
+
+        for (auto &amp;e : g[ver]) {
+            int ne = e.first, w = e.second;
+            if (dist[ne] &gt; dist[ver] + w) {
+                dist[ne] = dist[ver] + w;
+                // prev[ne] = ver;    获取路径
+                q.push({dist[ne], ne});
+            }
+        }
+    }
+    // 返回到 u -&gt; n 的最短路
+    if (dist[n] == INT_MAX) return -1;
+    return dist[n];
+}
+
+int main() {
+    scanf(&quot;%d%d&quot;, &amp;n, &amp;m);
+    g = vector&lt;vector&lt;PII&gt;&gt;(n + 1);  // 下标从1开始
+    for (int i = 0; i &lt; m; i++) {
+        int a, b, c;
+        scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;c);
+        g[a].push_back({b, c});
+    }
+    int ans = dijkstra(1);
+    printf(&quot;%d&quot;, ans);
+    return 0;
+}
+</code></pre>
+<ul>
+<li>打印路径</li>
+</ul>
+<pre><code class="lang-c++">// 根据prev获取路径
+vector&lt;int&gt; getPath(int t) {
+    vector&lt;int&gt; path;
+    for(; t != -1; t = prev[t])
+        path.push_back(t);
+    reverse(path.begin(),path.end());
+    return path; 
+}
+</code></pre>
+<h3 id="Floyd"><a href="#Floyd" class="headerlink" title="Floyd"></a>Floyd</h3><p> <code>T: O(n^3)  S: O(1)</code></p>
+<ul>
+<li>邻接矩阵（稠密图）</li>
+<li>允许负权边，不能有负权环</li>
+</ul>
+<p><strong>Note :</strong></p>
+<ol>
+<li>初试化时候对角线是0， 其他都是INF（INF不能是INT_MAX，做加法会越界）</li>
+<li>由于是邻接矩阵存储，重边的情况保留最短的边</li>
+<li>判断是否有路径的时候在边都是正数的情况下可以使用距离是否等于<code>g[a][b] == INF</code>判断，但有负权边则需要使用<code>g[a][b] &gt; INF / 2</code>。原因：当 <code>dist[i][j] = INF</code>,<code>dist[i][k] = INF</code>,<code>dist[k][j] = -10</code>时，那么dist[i][j]就会被更新成INF - 10，但此时i和j仍然是不连通的。</li>
+</ol>
+<pre><code class="lang-c++">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+const int INF = 0x3f3f3f3f;  // floyd() 中 g[i][k] + g[k][j]可能越界。所以INF为0x3f3f3f3f
+
+int n, m;
+vector&lt;vector&lt;int&gt;&gt; g;
+
+// 初始化
+void init() {
+    g = vector&lt;vector&lt;int&gt;&gt;(n + 1, vector&lt;int&gt;(n + 1, INF));
+    for (int i = 1; i &lt;= n; i++) g[i][i] = 0;
+}
+
+// 下标从1开始, 若要0开始就对应改成[0, n)
+void floyd() {
+    for (int k = 1; k &lt;= n; k++)
+        for (int i = 1; i &lt;= n; i++)
+            for (int j = 1; j &lt;= n; j++)
+                g[i][j] = min(g[i][j], g[i][k] + g[k][j]);
+}
+
+int main() {
+    int k;
+    scanf(&quot;%d%d%d&quot;, &amp;n, &amp;m, &amp;k);
+
+    init();
+
+    for (int i = 0; i &lt; m; i++) {
+        int a, b, w;
+        scanf(&quot;%d%d%d&quot;, &amp;a, &amp;b, &amp;w);
+        g[a][b] = min(g[a][b], w);  // 邻接矩阵去重边需要把最小的保留
+    }
+
+    floyd();
+
+    for (int i = 0; i &lt; k; i++) {
+        int a, b;
+        scanf(&quot;%d%d&quot;, &amp;a, &amp;b);
+        if (g[a][b] &gt; INF / 2) printf(&quot;impossible\n&quot;);  // 若全是权边 判断 == INF就行
+        else printf(&quot;%d\n&quot;, g[a][b]);
+    }
+
+    return 0;
+}
+</code></pre>
+
+            <hr>
+          </div>
+          <br>
+          <div>
+            <p>
+            
+              <span>
+                <i class="iconfont icon-inbox"></i>
+                
+                  <a class="hover-with-bg" href="/categories/%E7%AE%97%E6%B3%95">算法</a>
+                  &nbsp;
+                
+                  <a class="hover-with-bg" href="/categories/%E5%9B%BE%E8%AE%BA">图论</a>
+                  &nbsp;
+                
+              </span>&nbsp;&nbsp;
+            
+            
+              <span>
+                <i class="iconfont icon-tag"></i>
+                
+                  <a class="hover-with-bg" href="/tags/%E7%BC%96%E7%A8%8B">编程</a>
+                
+              </span>
+            
+            </p>
+            
+              <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-none d-lg-block col-lg-2 toc-container">
+      
+  <div id="toc">
+    <p class="h4"><i class="far fa-list-alt"></i>&nbsp;目录</p>
+    <div id="tocbot"></div>
+  </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- custom -->
+
+
+<!-- Comments -->
+<div class="col-lg-7 mx-auto nopadding-md">
+  <div class="container comments mx-auto" id="comments">
+    
+      <br><br>
+      
+      
+  <div id="gitalk-container"></div>
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.11.1/js/md5.min.js"></script>
+  <script type="text/javascript">
+    var gitalk = new Gitalk({
+      clientID: 'cbf8fb8a51aff41416e3',
+      clientSecret: 'b5b2229a80bf94074fbe53aa502edefd17a2ab9c',
+      repo: 'happy-yuxuan.github.io',
+      owner: 'happy-yuxuan',
+      admin: 'happy-yuxuan',
+      id: md5(location.pathname),
+      language: 'zh-CN',
+      perPage: 15,
+      pagerDirection: 'last',
+      createIssueManually: 'true',
+      distractionFreeMode: 'true'
+    });
+
+    gitalk.render('gitalk-container')
+  </script>
+
+
+    
+  </div>
+</div>
+
+    
+  </main>
+
+  
+    <a class="z-depth-1" id="scroll-top-button" href="#" role="button">
+      <i class="fa fa-chevron-up scroll-top-arrow" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><b>Hexo</b></a>
+    <i class="iconfont icon-love"></i>
+    <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <b>Fluid</b></a>
+    <br>
+
+    
+
+
+    
+
+
+    <!-- cnzz Analytics icon -->
+    
+
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script src="/lib/jquery/jquery.min.js" ></script>
+<script src="/lib/popper/popper.min.js" ></script>
+<script src="/lib/bootstrap/js/bootstrap.min.js" ></script>
+<script src="/lib/mdbootstrap/js/mdb.min.js" ></script>
+<script src="/js/main.js" ></script>
+
+
+  <script src="/js/lazyload.js" ></script>
+
+
+
+  
+    <script src="/lib/tocbot/tocbot.min.js" ></script>
+  
+  <script src="/js/post.js" ></script>
+
+
+
+  <script src="/lib/smoothscroll/SmoothScroll.min.js" ></script>
+
+
+
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+<!-- Plugins -->
+
+
+
+  <script src="/lib/prettify/prettify.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      $('pre').addClass('prettyprint  linenums');
+      prettyPrint();
+    })
+  </script>
+
+
+
+  <script src="/lib/typed/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "最短路&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script src="/lib/anchor/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "false",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      getSearchFile(path);
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script src="/lib/fancybox/jquery.fancybox.min.js" ></script>
+  <script>
+    $("#post img:not(.no-zoom img, img[no-zoom])").each(
+      function () {
+        var element = document.createElement("a");
+        $(element).attr("data-fancybox", "images");
+        $(element).attr("href", $(this).attr("src"));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+  
+  
+    <script>
+      !function (e, t, a) {
+        function r() {
+          for (var e = 0; e < s.length; e++) s[e].alpha <= 0 ? (t.body.removeChild(s[e].el), s.splice(e, 1)) : (s[e].y--, s[e].scale += .004, s[e].alpha -= .013, s[e].el.style.cssText = "left:" + s[e].x + "px;top:" + s[e].y + "px;opacity:" + s[e].alpha + ";transform:scale(" + s[e].scale + "," + s[e].scale + ") rotate(45deg);background:" + s[e].color + ";z-index:99999");
+          requestAnimationFrame(r)
+        }
+
+        function n() {
+          var t = "function" == typeof e.onclick && e.onclick;
+          e.onclick = function (e) {
+            t && t(), o(e)
+          }
+        }
+
+        function o(e) {
+          var a = t.createElement("div");
+          a.className = "heart", s.push({
+            el: a,
+            x: e.clientX - 5,
+            y: e.clientY - 5,
+            scale: 1,
+            alpha: 1,
+            color: c()
+          }), t.body.appendChild(a)
+        }
+
+        function i(e) {
+          var a = t.createElement("style");
+          a.type = "text/css";
+          try {
+            a.appendChild(t.createTextNode(e))
+          } catch (t) {
+            a.styleSheet.cssText = e
+          }
+          t.getElementsByTagName("head")[0].appendChild(a)
+        }
+
+        function c() {
+          return "rgb(" + ~~(255 * Math.random()) + "," + ~~(255 * Math.random()) + "," + ~~(255 * Math.random()) + ")"
+        }
+
+        var s = [];
+        e.requestAnimationFrame = e.requestAnimationFrame || e.webkitRequestAnimationFrame || e.mozRequestAnimationFrame || e.oRequestAnimationFrame || e.msRequestAnimationFrame || function (e) {
+          setTimeout(e, 1e3 / 60)
+        }, i(".heart{width: 10px;height: 10px;position: fixed;background: #f00;transform: rotate(45deg);-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);}.heart:after,.heart:before{content: '';width: inherit;height: inherit;background: inherit;border-radius: 50%;-webkit-border-radius: 50%;-moz-border-radius: 50%;position: fixed;}.heart:after{top: -5px;}.heart:before{left: -5px;}"), n(), r()
+      }(window, document);
+    </script>
+  
+
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="description" content="">
+  <meta name="author" content="Victor Wu">
+  <meta name="keywords" content="">
+  <title>双指针 ~ Victor&#39;s blog</title>
+
+  <link rel="stylesheet" href="/lib/font-awesome/css/all.min.css"  >
+<link rel="stylesheet" href="/lib/bootstrap/css/bootstrap.min.css"  >
+<link rel="stylesheet" href="/lib/mdbootstrap/css/mdb.min.css"  >
+<link rel="stylesheet" href="/lib/github-markdown/github-markdown.min.css"  >
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1067060_qzomjdt8bmp.css">
+
+
+
+  <link rel="stylesheet" href="/lib/prettify/tomorrow-night-eighties.min.css"  >
+
+<link rel="stylesheet" href="/css/main.css"  >
+
+
+  <link rel="stylesheet" href="/lib/fancybox/jquery.fancybox.min.css"  >
+
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Victor's blog</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">首页</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">归档</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">分类</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">标签</a>
+          </li>
+        
+          
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">关于</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" false
+         style="background: url('/img/default.png')no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask rgba-black-light flex-center">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              <br>
+              
+                <p class="mt-3">
+                  <i class="fas fa-calendar-alt" aria-hidden="true"></i>&nbsp;
+                  星期日, 二月 3日 2019, 3:22 下午
+                </p>
+              
+
+              <p>
+                
+                  
+                  &nbsp;<i class="far fa-chart-bar"></i>
+                  <span class="post-count">
+                    2.7k 字
+                  </span>&nbsp;
+                
+
+                
+                  
+                  &nbsp;<i class="far fa-clock"></i>
+                  <span class="post-count">
+                      13 分钟
+                  </span>&nbsp;
+                
+
+                
+                  <!-- 不蒜子统计文章PV -->
+                  
+                  &nbsp;<i class="far fa-eye" aria-hidden="true"></i>&nbsp;
+                  <span id="busuanzi_container_page_pv">
+                    <span id="busuanzi_value_page_pv"></span> 次
+                  </span>&nbsp;
+                
+              </p>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="py-5 z-depth-3" id="board">
+        <div class="post-content mx-auto" id="post">
+          <div class="markdown-body">
+            <h1 id="双指针"><a href="#双指针" class="headerlink" title="双指针"></a>双指针</h1><ul>
+<li>双指针的核心：将上一状态指针所表达的信息传递至下一状态，从而减少无谓的搜索。</li>
+<li>一般尾指针是add，头指针是remove</li>
+<li>一般提问求<strong>子串</strong>（连续区间）的<strong>最长、最短、数量</strong></li>
+</ul>
+<h2 id="模板"><a href="#模板" class="headerlink" title="模板"></a>模板</h2><ul>
+<li><p>对于一个序列，用两个指针维护一段区间(滑动窗口)， 可以相互转换。 <strong>（一般）判断最大的时候while里面</strong>。有边界情况的时候两个模板可以换着写，可能边界就会消失了。本人比较喜欢固定头</p>
+<ul>
+<li><p>固定尾指针:   i是新的尾指针， j是头指针 （移动的途中，即while循环中是满足条件的）</p>
+<pre><code class="lang-c++">int j = 0;
+for (int i = 0; i &lt; n; i++) {
+    // add可能对i进行操作，因为i这个元素要被加入窗口
+    while (j &lt;= i &amp;&amp; check1()) j++;  // remove， 里面都是满足check的区间
+    // 第一个不满足check性质的区间
+}
+</code></pre>
+</li>
+<li><p>固定头指针， 一般来说两个check是相反的， 即<code>check1 == !check2</code></p>
+<pre><code class="lang-c++">int j = 0;
+for (int i = 0; i &lt; n; i++) {
+  while (j &lt; n &amp;&amp; check2()) j++;  // add，里面都是满足check2的区间
+    if (!check2())  // 第一个不满足check2性质的区间. (只要j没有越界，但是j &lt;= n,因为j++了，不能写j&lt;=n会多出解)
+    // 可能对i进行操作，因为下一层循环i这个位置的元素要被移出窗口 remove
+}
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>对于两个序列，维护某种次序，比如一头一尾有序数组找和. 或归并排序中合并两个有序序列的操作</p>
+<pre><code class="lang-c++">// 固定左指针
+for (int l = 0, r = n - 1; l &lt; r; l++) {
+    while (r &gt;= l &amp;&amp; check()) r--; 
+}
+
+// 全局考虑，每次区间缩小
+int l = 0, r = n - 1;
+while (l &lt; r) {
+    /* 若找到满足性质的区间
+           返回这个区间           
+       若没找到：
+           每一次 l++ 或 r--;
+           每一次区间减少1        
+    */
+}
+</code></pre>
+</li>
+</ul>
+<h2 id="双指针经典题"><a href="#双指针经典题" class="headerlink" title="双指针经典题"></a>双指针经典题</h2><h4 id="167-两数之和-II-输入有序数组"><a href="#167-两数之和-II-输入有序数组" class="headerlink" title="167. 两数之和 II - 输入有序数组"></a><a href="https://leetcode-cn.com/problems/two-sum-ii-input-array-is-sorted/" target="_blank" rel="noopener">167. 两数之和 II - 输入有序数组</a></h4><ul>
+<li>对于每一个较小的数下标i， 看离l最近的较大的数的下标j可以到哪里。较大的数具有单调性</li>
+<li><p>这题同理在两个有序数组中找等于target的数， 也可以用这种方法</p>
+<pre><code class="lang-c++">  // 模板一
+  vector&lt;int&gt; twoSum(vector&lt;int&gt;&amp; numbers, int target) {
+      int n = numbers.size();
+      for (int i = 0, j = n - 1; i &lt; r; i++) {  // 枚举每一个较小的数字
+          while (j &gt;= i &amp;&amp; numbers[i] + numbers[j] &gt; target) j--;
+          if (numbers[i] + numbers[j] == target) return {i + 1, j + 1};
+      }
+      return {};
+  }
+
+  // 模板二
+  vector&lt;int&gt; twoSum(vector&lt;int&gt;&amp; numbers, int target) {
+      int n = numbers.size();
+      int l = 0, r = n - 1;
+      while (l &lt; r) {
+          int sum = numbers[l] + numbers[r];
+          if (sum == target) {
+              return {l + 1, r + 1};  // 下标从1开始
+          }
+          if (sum &gt; target) r--;
+          else l++;
+      }
+      return {};
+  }
+</code></pre>
+</li>
+</ul>
+<h4 id="15-三数之和"><a href="#15-三数之和" class="headerlink" title="15. 三数之和"></a><a href="https://leetcode-cn.com/problems/3sum/" target="_blank" rel="noopener">15. 三数之和</a></h4><p>去重比较麻烦</p>
+<ul>
+<li>枚举i相同的时候需要去重</li>
+<li>双指针找到一个解的时候需要去重</li>
+</ul>
+<pre><code class="lang-c++">// 模板一
+class Solution {
+public:
+    vector&lt;vector&lt;int&gt;&gt; threeSum(vector&lt;int&gt;&amp; nums) {
+        vector&lt;vector&lt;int&gt;&gt; ans;
+        if (nums.size() &lt; 3) return ans;
+
+        int n = nums.size();
+        sort(nums.begin(), nums.end());
+
+        for (int i = 0; i &lt; n - 2; i++) {
+            if (nums[i] &gt; 0) break;   // 剪枝
+            if (i - 1 &gt;= 0 &amp;&amp; nums[i] == nums[i-1]) continue;  // 去重
+            int target = -nums[i];
+            for (int l = i + 1, r = n - 1; l &lt; r; l++) {
+                while (r &gt; l &amp;&amp; nums[l] + nums[r] &gt; target) r--;
+                if (r == l) break;   // !!!
+
+                int sum = nums[l] + nums[r];
+                if (sum == target) {
+                    ans.push_back({nums[i], nums[l], nums[r]});
+                    while (l &lt; r &amp;&amp; nums[l] == nums[l+1]) l++;  // 去重
+                    while (l &lt; r &amp;&amp; nums[r] == nums[r-1]) r--;  // 去重
+                    r--;
+                }
+
+            }
+        }
+
+        return ans;
+    }
+};
+</code></pre>
+<pre><code class="lang-c++">// 模板二
+class Solution {
+public:
+    vector&lt;vector&lt;int&gt;&gt; threeSum(vector&lt;int&gt;&amp; nums) {
+        vector&lt;vector&lt;int&gt;&gt; ans;
+        if (nums.size() &lt; 3) return ans;
+
+        int n = nums.size();
+        sort(nums.begin(), nums.end());
+
+        for (int i = 0; i &lt; n - 2; i++) {
+            if (nums[i] &gt; 0) break;  // 后面不用再找了
+            if (i - 1 &gt;= 0 &amp;&amp; nums[i] == nums[i-1]) continue; // 去重
+
+            // 双指针算法
+            int target = -nums[i];  // 再后面有序的序列找target
+            int l = i + 1, r = n - 1;
+            while (l &lt; r) {
+                int sum = nums[l] + nums[r];
+                if (sum &gt; target) {
+                    r--;
+                } else if (sum &lt; target) {
+                    l++;
+                } else {
+                    ans.push_back({nums[i], nums[l], nums[r]});
+                    while (l &lt; r &amp;&amp; nums[l] == nums[l+1]) l++; // 去重
+                    while (l &lt; r &amp;&amp; nums[r] == nums[r-1]) r--; // 去重
+                    l++;
+                    r--;
+                }
+            }
+        }
+
+        return ans;
+    }
+};
+</code></pre>
+<h2 id="Hash表-滑动窗口"><a href="#Hash表-滑动窗口" class="headerlink" title="Hash表 + 滑动窗口"></a>Hash表 + 滑动窗口</h2><h4 id="76-最小覆盖子串"><a href="#76-最小覆盖子串" class="headerlink" title="76. 最小覆盖子串"></a><a href="https://leetcode-cn.com/problems/minimum-window-substring/" target="_blank" rel="noopener">76. 最小覆盖子串</a></h4><ul>
+<li><p>通过维护一个滑动串口，找到最小覆盖的子串。</p>
+</li>
+<li><p>判断所有t字符中的数字是否在hash中，技巧：</p>
+<ul>
+<li><p>把t的所有字符统计个数，用一个变量rest表示还剩多少字符没有匹配，若<code>rest == 0</code>说明所有字符已经匹配完成（即0个字符没有匹配）. <strong>counts[c]为正的时候说明还需要多少c， counts[c]为负的时候说明多出来了多少c。</strong></p>
+</li>
+<li><p>每次添加则使用<code>if (counts.count(s[i]) &amp;&amp; --counts[s[i]] == 0) rest--;</code> ， 删除则使用 <code>if (counts.count(s[j]) &amp;&amp; counts[s[j]]++ == 0) rest++;</code> 。</p>
+<p>PS: rest可以理解为开关，分界线是<code>counts[c] == 0</code>的时候，刚超过0，就还需要c字符。 刚减小到0的时候，c字符就够了。</p>
+</li>
+</ul>
+</li>
+</ul>
+<pre><code class="lang-c++">// 固定尾
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        if (t.empty() || s.empty() || t.length() &gt; s.length()) return &quot;&quot;;
+        int n = s.length(), rest = 0, j = 0, start = -1, len = n + 1;
+        unordered_map&lt;char, int&gt; counts;
+        for (char c : t) counts[c]++;
+        rest = counts.size();
+        for (int i = 0; i &lt; n; i++) {
+            if (counts.count(s[i]) &amp;&amp; --counts[s[i]] == 0) rest--;
+            while (rest == 0) {
+                if (i - j + 1 &lt;= len) start = j, len = i - j + 1;  // 推荐
+                if (counts.count(s[j]) &amp;&amp; counts[s[j]]++ == 0) rest++;
+                j++;
+            }
+        }
+        if (start == -1) return &quot;&quot;;
+        return s.substr(start, len);
+    }
+};
+</code></pre>
+<pre><code class="lang-c++">// 固定头
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        if (t.empty() || s.empty() || t.length() &gt; s.length()) return &quot;&quot;;
+        int n = s.length(), rest = 0, j = 0, start = -1, len = n + 1;
+        unordered_map&lt;char, int&gt; counts;
+        for (char c : t) counts[c]++;
+        rest = counts.size();
+        for (int i = 0; i &lt; n; i++) {
+            while (j &lt; n &amp;&amp; rest &gt; 0) {
+                if (counts.count(s[j]) &amp;&amp; --counts[s[j]] == 0) rest--;
+                j++;
+            }
+            if (rest == 0 &amp;&amp; len &gt; j - i) start = i, len = j - i;
+            if (counts.count(s[i]) &amp;&amp; counts[s[i]]++ == 0) rest++;
+        }
+        if (start == -1) return &quot;&quot;;
+        return s.substr(start, len);
+    }
+};
+</code></pre>
+<h4 id="438-找到字符串中所有字母异位词"><a href="#438-找到字符串中所有字母异位词" class="headerlink" title="438. 找到字符串中所有字母异位词"></a><a href="https://leetcode-cn.com/problems/find-all-anagrams-in-a-string/" target="_blank" rel="noopener">438. 找到字符串中所有字母异位词</a></h4><ul>
+<li>通过滑动窗口找能够包含字符p，并且长度等于p的子串。</li>
+</ul>
+<pre><code class="lang-c++">// 固定尾
+class Solution {
+public:
+    vector&lt;int&gt; findAnagrams(string s, string p) {
+        if (p.empty() || s.empty() || s.length() &lt; p.length()) return {};
+        int n = s.length(), m = p.length(), j = 0, rest = 0;
+        vector&lt;int&gt; ans;
+        unordered_map&lt;char, int&gt; counts;
+        for (char c : p) counts[c]++;
+        rest = counts.size();
+        for (int i = 0; i &lt; n; i++) {
+            if (counts.count(s[i]) &amp;&amp; --counts[s[i]] == 0) rest--;
+            while (rest == 0) {
+                if (i - j + 1 == m) ans.push_back(j);  // 推荐
+                if (counts.count(s[j]) &amp;&amp; counts[s[j]]++ == 0) rest++;
+                j++;
+            }
+        }
+        return ans;
+    }
+};
+</code></pre>
+<pre><code class="lang-c++">// 固定头
+class Solution {
+public:
+    vector&lt;int&gt; findAnagrams(string s, string p) {
+        if (p.empty() || s.empty() || s.length() &lt; p.length()) return {};
+        int n = s.length(), m = p.length(), j = 0, rest = 0;
+        vector&lt;int&gt; ans;
+        unordered_map&lt;char, int&gt; counts;
+        for (char c : p) counts[c]++;
+        rest = counts.size();
+        for (int i = 0; i &lt; n; i++) {
+            while (j &lt; n &amp;&amp; rest &gt; 0) {
+                if (counts.count(s[j]) &amp;&amp; --counts[s[j]] == 0) rest--;
+                j++;
+            }
+            if (rest == 0 &amp;&amp; j - i == m) ans.push_back(i);
+            if (counts.count(s[i]) &amp;&amp; counts[s[i]]++ == 0) rest++;
+        }
+        return ans;
+    }
+};
+</code></pre>
+<h4 id="3-无重复字符的最长子串"><a href="#3-无重复字符的最长子串" class="headerlink" title="3. 无重复字符的最长子串"></a><a href="https://leetcode-cn.com/problems/longest-substring-without-repeating-characters/" target="_blank" rel="noopener">3. 无重复字符的最长子串</a></h4><ul>
+<li>求最长的子串</li>
+<li>枚举每个子串结尾， 看左端点最远可以到哪里。左端点具有单调性</li>
+</ul>
+<pre><code class="lang-c++">// 固定尾
+int lengthOfLongestSubstring(string s) {
+    if (s.empty()) return 0;
+    int n = s.length();
+    unordered_map&lt;char, int&gt; counts;
+    int j = 0, ans = 0;
+    for (int i = 0, j = 0; i &lt; n; i++) {
+        char cur = s[i];
+        counts[cur]++;
+        while (counts[cur] &gt; 1) {
+            counts[s[j]]--;
+            j++;
+        }
+        ans = max(ans, i - j + 1);
+    }
+    return ans;
+}
+</code></pre>
+<pre><code class="lang-c++">// 固定头, 推荐，因为判断在while循环中
+int lengthOfLongestSubstring(string s) {
+    if (s.empty()) return 0;
+    int n = s.length();
+    unordered_map&lt;char, int&gt; counts;
+    int j = 0, ans = 0;
+    for (int i = 0; i &lt; n; i++) {
+        while (j &lt; n &amp;&amp; counts[s[j]] == 0) {
+            ans = max(ans, j - i + 1);   // 推荐
+            ++counts[s[j]];
+            ++j;
+        }
+        --counts[s[i]];
+
+    return ans;
+}
+</code></pre>
+<h2 id="和至少为k的最短数组"><a href="#和至少为k的最短数组" class="headerlink" title="和至少为k的最短数组"></a>和至少为k的最短数组</h2><h4 id="209-长度最小的子数组"><a href="#209-长度最小的子数组" class="headerlink" title="209. 长度最小的子数组"></a><a href="https://leetcode-cn.com/problems/minimum-size-subarray-sum/" target="_blank" rel="noopener">209. 长度最小的子数组</a></h4><p>the ans is initialized as <code>ans = n + 1</code></p>
+<p>One pass, remove the value from sum <code>s</code> by doing <code>s += nums[j]</code></p>
+<p>if <code>s &lt;= 0</code>. It means the total sum of <code>nums[j] + ... + nums[i]</code>that we want.</p>
+<p>Then we update the <code>ans = min(ans, i - j + 1)</code></p>
+<p>Finally we return the answer <code>ans</code></p>
+<pre><code class="lang-c++">// 固定尾指针写法
+class Solution {
+public:
+    int minSubArrayLen(int s, vector&lt;int&gt;&amp; nums) {
+        int j = 0, n = nums.size(), ans = n + 1;
+        for (int i = 0; i &lt; nums.size(); i++) {
+            s -= nums[i];
+            while (s &lt;= 0) {
+                ans = min(ans, i - j + 1);  // 推荐
+                s += nums[j++];
+            }
+        }
+        return ans % (n + 1);
+    }
+};
+</code></pre>
+<pre><code class="lang-c++">// 固定头指针写法
+class Solution {
+public:
+    int minSubArrayLen(int s, vector&lt;int&gt;&amp; nums) {
+        int j = 0, n = nums.size(), ans = n + 1;
+        for (int i = 0; i &lt; nums.size(); i++) {
+            while (j &lt; n &amp;&amp; s &gt; 0) {
+                s -= nums[j++];
+            }
+            if (s &lt;= 0) ans = min(ans, j - i);
+            s += nums[i];
+        }
+        return ans % (n + 1);
+    }
+};
+</code></pre>
+<h4 id="862-和至少为-K-的最短子数组"><a href="#862-和至少为-K-的最短子数组" class="headerlink" title="862. 和至少为 K 的最短子数组"></a><a href="https://leetcode-cn.com/problems/shortest-subarray-with-sum-at-least-k/" target="_blank" rel="noopener">862. 和至少为 K 的最短子数组</a></h4><h2 id="包含k个字符的最长子串"><a href="#包含k个字符的最长子串" class="headerlink" title="包含k个字符的最长子串"></a>包含k个字符的最长子串</h2><h4 id="340-至多包含-K-个不同字符的最长子串"><a href="#340-至多包含-K-个不同字符的最长子串" class="headerlink" title="340. 至多包含 K 个不同字符的最长子串"></a><a href="https://leetcode-cn.com/problems/longest-substring-with-at-most-k-distinct-characters/" target="_blank" rel="noopener">340. 至多包含 K 个不同字符的最长子串</a></h4><pre><code class="lang-c++">给定一个字符串 s ，找出 至多 包含 k 个不同字符的最长子串 T。
+
+输入: s = &quot;eceba&quot;, k = 2
+输出: 3
+解释: 则 T 为 &quot;ece&quot;，所以长度为 3。
+
+输入: s = &quot;aa&quot;, k = 1
+输出: 2
+解释: 则 T 为 &quot;aa&quot;，所以长度为 2。
+</code></pre>
+<pre><code class="lang-c++">// 固定尾
+class Solution {
+public:
+    int lengthOfLongestSubstringKDistinct(string s, int k) {
+        if (s.empty()) return 0;
+        int n = s.length(), ans = 0, j = 0;
+        unordered_map&lt;char, int&gt; counts;
+        for (int i = 0; i &lt; n; i++) {
+            counts[s[i]]++;
+            while (counts.size() &gt; k) {
+                if (--counts[s[j]] == 0) counts.erase(s[j]);
+                j++;
+            }
+            ans = max(ans, i - j + 1);
+        }
+        return ans;
+    }
+};
+</code></pre>
+<pre><code class="lang-c++">// 固定头
+class Solution {
+public:
+    int lengthOfLongestSubstringKDistinct(string s, int k) {
+        if (s.empty()) return 0;
+        int n = s.length(), ans = 0, j = 0;
+        unordered_map&lt;char, int&gt; counts;
+        for (int i = 0; i &lt; n; i++) {
+            while (j &lt; n &amp;&amp; counts.size() &lt;= k) {
+                // PS: [3,3,3,1,2,1,1,2,3,3,4] 易错
+                if (!counts.count(s[j]) &amp;&amp; counts.size() == k) break;
+                ans = max(ans, j - i + 1);
+                ++counts[s[j]];
+                j++;
+            }
+            if (--counts[s[i]] == 0) counts.erase(s[i]);
+        }
+        return ans;
+    }
+};
+</code></pre>
+<h4 id="992-K-个不同整数的子数组"><a href="#992-K-个不同整数的子数组" class="headerlink" title="992. K 个不同整数的子数组"></a><a href="https://leetcode-cn.com/problems/subarrays-with-k-different-integers/" target="_blank" rel="noopener">992. K 个不同整数的子数组</a></h4><ul>
+<li>转成atMost做</li>
+</ul>
+<pre><code class="lang-c++">class Solution {
+public:
+    int subarraysWithKDistinct(vector&lt;int&gt;&amp; A, int K) {
+        return atMost(A, K) - atMost(A, K-1);
+    }
+
+    int atMost(vector&lt;int&gt;&amp; A, int K) {
+        int n = A.size(), ans = 0, j = 0;
+        if (!n || K &lt;= 0 || K &gt; n) return 0;
+        unordered_map&lt;int, int&gt; counts;
+        for (int i = 0; i &lt; n; i++) {
+            while (j &lt; n &amp;&amp; counts.size() &lt;= K) {
+                if (counts.size() == K &amp;&amp; !counts.count(A[j])) break;
+                ans++;
+                counts[A[j]]++;
+                j++;
+            }
+            if (counts.size() &lt;= K) ans += j - i - 1;
+            if (--counts[A[i]] == 0) counts.erase(A[i]);
+        }
+        return ans;
+    }
+};
+</code></pre>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><h4 id="1358-包含所有三种字符的子字符串数目"><a href="#1358-包含所有三种字符的子字符串数目" class="headerlink" title="1358. 包含所有三种字符的子字符串数目"></a><a href="https://leetcode-cn.com/problems/number-of-substrings-containing-all-three-characters/" target="_blank" rel="noopener">1358. 包含所有三种字符的子字符串数目</a></h4><pre><code class="lang-c++">// 固定尾
+class Solution {
+public:
+    int numberOfSubstrings(string s) {
+        int counts[3] = {0, 0, 0};
+        int j = 0, ans = 0, n = s.length();
+        for (int i = 0; i &lt; n; i++) {
+            counts[s[i]-&#39;a&#39;]++;
+            while (counts[0] &amp;&amp; counts[1] &amp;&amp; counts[2]) {
+                ans += n - i;
+                counts[s[j]-&#39;a&#39;]--;
+                j++;
+            }
+        }
+        return ans;
+    }
+};
+</code></pre>
+<pre><code class="lang-c++">// 固定头
+class Solution {
+public:
+    int numberOfSubstrings(string s) {
+        int counts[3] = {0, 0, 0};
+        int j = 0, ans = 0, n = s.length();
+        for (int i = 0; i &lt; n; i++) {
+            while (j &lt; n &amp;&amp; (!counts[0] || !counts[1] || !counts[2])) {
+                counts[s[j]-&#39;a&#39;]++;
+                j++;
+            }
+            if (counts[0] &amp;&amp; counts[1] &amp;&amp; counts[2]) ans += n - j + 1;
+            counts[s[i]-&#39;a&#39;]--;
+        }
+        return ans;
+    }
+};
+</code></pre>
+
+            <hr>
+          </div>
+          <br>
+          <div>
+            <p>
+            
+              <span>
+                <i class="iconfont icon-inbox"></i>
+                
+                  <a class="hover-with-bg" href="/categories/%E7%AE%97%E6%B3%95">算法</a>
+                  &nbsp;
+                
+                  <a class="hover-with-bg" href="/categories/%E5%9F%BA%E7%A1%80">基础</a>
+                  &nbsp;
+                
+              </span>&nbsp;&nbsp;
+            
+            
+              <span>
+                <i class="iconfont icon-tag"></i>
+                
+                  <a class="hover-with-bg" href="/tags/%E7%BC%96%E7%A8%8B">编程</a>
+                
+              </span>
+            
+            </p>
+            
+              <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-none d-lg-block col-lg-2 toc-container">
+      
+  <div id="toc">
+    <p class="h4"><i class="far fa-list-alt"></i>&nbsp;目录</p>
+    <div id="tocbot"></div>
+  </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- custom -->
+
+
+<!-- Comments -->
+<div class="col-lg-7 mx-auto nopadding-md">
+  <div class="container comments mx-auto" id="comments">
+    
+      <br><br>
+      
+      
+  <div id="gitalk-container"></div>
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.11.1/js/md5.min.js"></script>
+  <script type="text/javascript">
+    var gitalk = new Gitalk({
+      clientID: 'cbf8fb8a51aff41416e3',
+      clientSecret: 'b5b2229a80bf94074fbe53aa502edefd17a2ab9c',
+      repo: 'happy-yuxuan.github.io',
+      owner: 'happy-yuxuan',
+      admin: 'happy-yuxuan',
+      id: md5(location.pathname),
+      language: 'zh-CN',
+      perPage: 15,
+      pagerDirection: 'last',
+      createIssueManually: 'true',
+      distractionFreeMode: 'true'
+    });
+
+    gitalk.render('gitalk-container')
+  </script>
+
+
+    
+  </div>
+</div>
+
+    
+  </main>
+
+  
+    <a class="z-depth-1" id="scroll-top-button" href="#" role="button">
+      <i class="fa fa-chevron-up scroll-top-arrow" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><b>Hexo</b></a>
+    <i class="iconfont icon-love"></i>
+    <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"> <b>Fluid</b></a>
+    <br>
+
+    
+
+
+    
+
+
+    <!-- cnzz Analytics icon -->
+    
+
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script src="/lib/jquery/jquery.min.js" ></script>
+<script src="/lib/popper/popper.min.js" ></script>
+<script src="/lib/bootstrap/js/bootstrap.min.js" ></script>
+<script src="/lib/mdbootstrap/js/mdb.min.js" ></script>
+<script src="/js/main.js" ></script>
+
+
+  <script src="/js/lazyload.js" ></script>
+
+
+
+  
+    <script src="/lib/tocbot/tocbot.min.js" ></script>
+  
+  <script src="/js/post.js" ></script>
+
+
+
+  <script src="/lib/smoothscroll/SmoothScroll.min.js" ></script>
+
+
+
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+<!-- Plugins -->
+
+
+
+  <script src="/lib/prettify/prettify.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      $('pre').addClass('prettyprint  linenums');
+      prettyPrint();
+    })
+  </script>
+
+
+
+  <script src="/lib/typed/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "双指针&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script src="/lib/anchor/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "false",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      getSearchFile(path);
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script src="/lib/fancybox/jquery.fancybox.min.js" ></script>
+  <script>
+    $("#post img:not(.no-zoom img, img[no-zoom])").each(
+      function () {
+        var element = document.createElement("a");
+        $(element).attr("data-fancybox", "images");
+        $(element).attr("href", $(this).attr("src"));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+  
+  
+    <script>
+      !function (e, t, a) {
+        function r() {
+          for (var e = 0; e < s.length; e++) s[e].alpha <= 0 ? (t.body.removeChild(s[e].el), s.splice(e, 1)) : (s[e].y--, s[e].scale += .004, s[e].alpha -= .013, s[e].el.style.cssText = "left:" + s[e].x + "px;top:" + s[e].y + "px;opacity:" + s[e].alpha + ";transform:scale(" + s[e].scale + "," + s[e].scale + ") rotate(45deg);background:" + s[e].color + ";z-index:99999");
+          requestAnimationFrame(r)
+        }
+
+        function n() {
+          var t = "function" == typeof e.onclick && e.onclick;
+          e.onclick = function (e) {
+            t && t(), o(e)
+          }
+        }
+
+        function o(e) {
+          var a = t.createElement("div");
+          a.className = "heart", s.push({
+            el: a,
+            x: e.clientX - 5,
+            y: e.clientY - 5,
+            scale: 1,
+            alpha: 1,
+            color: c()
+          }), t.body.appendChild(a)
+        }
+
+        function i(e) {
+          var a = t.createElement("style");
+          a.type = "text/css";
+          try {
+            a.appendChild(t.createTextNode(e))
+          } catch (t) {
+            a.styleSheet.cssText = e
+          }
+          t.getElementsByTagName("head")[0].appendChild(a)
+        }
+
+        function c() {
+          return "rgb(" + ~~(255 * Math.random()) + "," + ~~(255 * Math.random()) + "," + ~~(255 * Math.random()) + ")"
+        }
+
+        var s = [];
+        e.requestAnimationFrame = e.requestAnimationFrame || e.webkitRequestAnimationFrame || e.mozRequestAnimationFrame || e.oRequestAnimationFrame || e.msRequestAnimationFrame || function (e) {
+          setTimeout(e, 1e3 / 60)
+        }, i(".heart{width: 10px;height: 10px;position: fixed;background: #f00;transform: rotate(45deg);-webkit-transform: rotate(45deg);-moz-transform: rotate(45deg);}.heart:after,.heart:before{content: '';width: inherit;height: inherit;background: inherit;border-radius: 50%;-webkit-border-radius: 50%;-moz-border-radius: 50%;position: fixed;}.heart:after{top: -5px;}.heart:before{left: -5px;}"), n(), r()
+      }(window, document);
+    </script>
+  
+
+
+
+
+
+
+
+
+</body>
+</html>
