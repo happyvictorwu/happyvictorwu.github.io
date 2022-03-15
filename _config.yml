@@ -99,5 +99,5 @@ theme: fluid
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: https://github.com/happy-yuxuan/happy-yuxuan.github.io
+  repository: https://github.com/happyvictorwu/happyvictorwu.github.io
   branch: master
